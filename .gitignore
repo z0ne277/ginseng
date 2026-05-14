@@ -1,0 +1,41 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local datasets and generated artifacts
+data/
+weights/
+outputs/
+cache/
+checkpoints/
+batch_results*/
+results*/
+visualizations*/
+visualize/
+failure_viz*/
+pair_similarity_runs/
+resolution_impact_runs/
+demo_augment_outputs/
+tmp_resolution_smoke/
+test_pair_simalarity*/
+
+# Large binary artifacts
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.pkl
+
+# Local split/config artifacts derived from private data
+csv/
+query_groups.json
+*_summary.csv
+group_similarity.csv
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

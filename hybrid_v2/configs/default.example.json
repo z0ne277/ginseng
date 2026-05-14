@@ -1,0 +1,65 @@
+{
+  "common": {
+    "feature_dim": 256,
+    "topo_dim": 128,
+    "K": 4096,
+    "m": 0.999,
+    "T": 0.07,
+    "topo_weight": 0.35,
+    "use_legacy_branch": true,
+    "use_skeleton_branch": false,
+    "use_edge_branch": true,
+    "use_frequency_branch": false,
+    "use_gpu": true,
+    "img_suffix": [".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"],
+    "image_preprocess": {
+      "resize": 224,
+      "mean": [0.5, 0.5, 0.5],
+      "std": [0.5, 0.5, 0.5]
+    }
+  },
+  "train": {
+    "train_csv": "data/splits/train.csv",
+    "val_csv": "data/splits/val.csv",
+    "test_csv": "data/splits/test.csv",
+    "batch_size": 128,
+    "learning_rate": 0.0001,
+    "num_epochs": 200,
+    "patience": 15,
+    "warmup_epochs": 5,
+    "checkpoint_dir": "outputs/hybrid_v2/checkpoints",
+    "num_workers": 0,
+    "pin_memory": false,
+    "use_augment": true,
+    "use_binarization": false,
+    "binarization_threshold": 128,
+    "weight_decay": 0.0001,
+    "gradient_clip_max_norm": 1.0,
+    "lr_scheduler": "plateau",
+    "cosine_T_max": 50,
+    "save_every": 10,
+    "eval_every": 5
+  },
+  "extraction": {
+    "image_dir": "data/gallery",
+    "model_path": "weights/hybrid_v2/best_model.pth",
+    "output_feats": "outputs/hybrid_v2/gallery_feats_multi_topo.pt",
+    "use_gpu": true
+  },
+  "retrieval": {
+    "model_path": "weights/hybrid_v2/best_model.pth",
+    "feature_path": "outputs/hybrid_v2/gallery_feats_multi_topo.pt",
+    "query_image": "data/query/example.jpg",
+    "output_folder": "outputs/hybrid_v2/retrieval",
+    "top_k": 10,
+    "use_gpu": true
+  },
+  "batch_retrieval": {
+    "model_path": "weights/hybrid_v2/best_model.pth",
+    "feature_path": "outputs/hybrid_v2/gallery_feats_multi_topo.pt",
+    "output_folder": "outputs/hybrid_v2/batch_results",
+    "query_groups_json": "data/query_groups.json",
+    "top_k": 10,
+    "use_gpu": true
+  }
+}
