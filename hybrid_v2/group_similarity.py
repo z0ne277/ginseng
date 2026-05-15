@@ -1,11 +1,11 @@
-"""
-Compute per-folder similarity scores using a trained hybrid_v2 model.
+\
+\
+\
+\
+\
+\
+\
 
-Score definition:
-- Extract fused features (visual + topo), L2-normalized.
-- Compute mean pairwise cosine similarity for selected images in each folder.
-- Map to [0, 1] by (sim + 1) / 2.
-"""
 
 import argparse
 import csv

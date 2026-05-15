@@ -1,15 +1,15 @@
-"""
-单张人参图像的数据增强演示脚本（hybrid_v3 风格）
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
 
-用途：
-- 输入一张已经经过 ginseng_extractor 处理的“单只人参”图片（建议来自 library_processed 或 library_binary）
-- 使用 hybrid_v3 中 UnsupervisedContrastiveDataset 的增强逻辑
-- 输出两张不同的数据增强图像，可用于 encoder_q / encoder_k 两路输入的示意
-
-注意：
-- 本脚本不改动任何现有代码，只复用 UnsupervisedContrastiveDataset 的 _binarize 和 augment_image。
-- 默认会先做一次自适应二值化，再生成两份随机增强视图。
-"""
 
 import argparse
 import os
@@ -25,11 +25,11 @@ def build_augment_helper(
     augment_strength: str = "medium",
     binarization_threshold: int = 128,
 ) -> UnsupervisedContrastiveDataset:
-    """
-    构造一个仅用于复用增强逻辑的 UnsupervisedContrastiveDataset 实例。
-    - 使用 hybrid_v3/csv/train.csv 作为占位 CSV（不会真正使用其中的数据行）
-    - 不传 transform，只调用其 _binarize 和 augment_image
-    """
+\
+\
+\
+\
+
     csv_path = base_dir / "csv" / "train.csv"
     if not csv_path.exists():
         raise FileNotFoundError(f"占位 CSV 未找到: {csv_path}")
@@ -51,14 +51,14 @@ def generate_two_views_for_encoder(
     augment_strength: str = "medium",
     binarization_threshold: int = 128,
 ) -> tuple[str, str]:
-    """
-    输入一张已经是“单只人参”的图像（黑底或白底均可），输出两张增强后的图：
-    - view_q：建议送入 encoder_q
-    - view_k：建议送入 encoder_k
+\
+\
+\
+\
+\
+\
+\
 
-    返回值：
-        (view_q_path, view_k_path)
-    """
     base_dir = Path(__file__).resolve().parent
     img_path = Path(image_path)
     if not img_path.exists():
@@ -67,24 +67,24 @@ def generate_two_views_for_encoder(
     output_root = Path(output_dir)
     output_root.mkdir(parents=True, exist_ok=True)
 
-    # 1. 构造增强 helper（复用 hybrid_v3 的增强风格）
+
     aug_helper = build_augment_helper(
         base_dir=base_dir,
         augment_strength=augment_strength,
         binarization_threshold=binarization_threshold,
     )
 
-    # 2. 读取原图并转为灰度（与 UnsupervisedContrastiveDataset 一致）
+
     image = Image.open(img_path).convert("L")
 
-    # 3. 先做一次自适应二值化（对应“ginseng_extractor 后 + 二值化”的阶段）
+
     binary_img = aug_helper._binarize(image)
 
-    # 4. 生成两份随机增强视图（与 __getitem__ 中生成 img1 / img2 的逻辑一致）
+
     view_q = aug_helper.augment_image(binary_img.copy())
     view_k = aug_helper.augment_image(binary_img.copy())
 
-    # 5. 保存到指定目录，文件名基于原始文件名
+
     stem = img_path.stem
     suffix = img_path.suffix or ".jpg"
     view_q_path = output_root / f"{stem}_encoder_q_aug{suffix}"
@@ -144,4 +144,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

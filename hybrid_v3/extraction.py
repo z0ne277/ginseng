@@ -1,13 +1,13 @@
-"""
-改进多支路拓扑网络的特征提取脚本
+\
+\
+\
+\
+\
+\
+\
+\
+\
 
-功能:
-1. 批量提取图库特征(视觉+拓扑融合特征)
-2. 支持递归扫描目录
-3. 保存特征文件供检索使用
-
-基于: hybrid/model.py (MoCoV3HybridTopo)
-"""
 
 import os
 import sys
@@ -18,15 +18,15 @@ from PIL import Image
 from torchvision import transforms
 from datetime import datetime
 
-# 导入模型
+
 from model import MoCoV3HybridTopo
 from config import load_config
 
-# ============================================================
-# 配置参数
+
+
 IMAGE_SUFFIXES_DEFAULT = ('.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff')
 
-# Global runtime config (filled in main)
+
 config = {}
 image_preprocess = None
 
@@ -52,11 +52,11 @@ def build_preprocess(cfg):
         transforms.Normalize(mean=preprocess_cfg.get('mean', [0.5, 0.5, 0.5]), std=preprocess_cfg.get('std', [0.5, 0.5, 0.5]))
     ])
 
-# ============================================================
-# 工具函数
-# ============================================================
+
+
+
 def get_all_img_paths(root_dir, suffix):
-    """递归获取目录下所有指定后缀的图像路径"""
+
     file_list = []
     for dirpath, _, filenames in os.walk(root_dir):
         for f in filenames:
@@ -66,7 +66,7 @@ def get_all_img_paths(root_dir, suffix):
 
 
 def get_fused_features(model, img_path, device):
-    """Extract features according to config['feature_type'] (visual/topo/both)."""
+
     img = Image.open(img_path).convert("L").convert("RGB")
     img_tensor = image_preprocess(img).unsqueeze(0).to(device)
 
@@ -102,7 +102,7 @@ def get_fused_features(model, img_path, device):
             use_query_encoder=True,
             feature_type='topo'
         )
-        # Weighted fusion to avoid topology branch dominating retrieval.
+
         alpha = float(config.get('fusion_alpha', 0.15))
         alpha = max(0.0, min(1.0, alpha))
         visual_feat = F.normalize(visual_feat, dim=1)
@@ -111,30 +111,30 @@ def get_fused_features(model, img_path, device):
         fused_feat = F.normalize(fused_feat, dim=1)
         return fused_feat.cpu().squeeze()
 
-# ============================================================
-# 主函数
-# ============================================================
+
+
+
 def main():
-    """主函数:批量提取图库特征"""
+
 
     global config, image_preprocess
     config = load_runtime_config()
     image_preprocess = build_preprocess(config)
 
-    # 初始化日志
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"\n{'=' * 70}")
     print(f"[{timestamp}] 启动多支路拓扑网络特征提取流程")
     print(f"{'=' * 70}")
 
-    # 设备和模型初始化
+
     device = torch.device("cuda" if config['use_gpu'] else "cpu")
     print(f"\n✅ 计算设备: {device}")
     if torch.cuda.is_available():
         print(f"   GPU: {torch.cuda.get_device_name(0)}")
         print(f"   CUDA Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
 
-    # 加载模型
+
     print(f"\n📦 加载多支路拓扑模型...")
     print(f"   use_topology: {config.get('use_topology', True)}")
     print(f"   支路配置:")
@@ -179,7 +179,7 @@ def main():
     if not model.use_topology and feature_type == 'both':
         print("⚠️  当前配置 use_topology=False，feature_type=both 将自动退化为 visual。")
 
-    # 获取所有图像路径
+
     print(f"\n🔍 扫描图库目录: {config['image_dir']}")
     img_paths = get_all_img_paths(config['image_dir'], config['img_suffix'])
     print(f"✅ 共发现 {len(img_paths)} 张图片")
@@ -188,7 +188,7 @@ def main():
         print(f"⚠️  没有找到任何图片,程序退出")
         return
 
-    # 批量提取特征
+
     print(f"\n📊 开始提取融合特征...")
     print(f"   视觉特征维度: {config['feature_dim']}")
     print(f"   拓扑特征维度: {config['topo_dim']}")
@@ -209,7 +209,7 @@ def main():
             features.append(feat)
             valid_paths.append(img_path)
 
-            # 每20张或最后一张时打印进度
+
             if (i + 1) % 20 == 0 or i == len(img_paths) - 1:
                 progress_pct = (i + 1) / len(img_paths) * 100
                 print(f"   [{i + 1:>4d}/{len(img_paths)}] ({progress_pct:>5.1f}%) ✅ {os.path.basename(img_path)}")
@@ -217,7 +217,7 @@ def main():
         except Exception as e:
             print(f"   [{i + 1:>4d}/{len(img_paths)}] ❌ 跳过损坏图片: {os.path.basename(img_path)} -> {str(e)[:50]}")
 
-    # 保存特征
+
     print(f"\n💾 保存特征...")
     features_tensor = torch.stack(features)
 

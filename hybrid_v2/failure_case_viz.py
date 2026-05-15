@@ -1,7 +1,7 @@
-"""
-Failure case visualization: parse batch retrieval results and generate topology op grids
-for query / relevant / top-1 retrieved.
-"""
+\
+\
+\
+
 
 import argparse
 import csv
@@ -16,7 +16,7 @@ import torch
 import torch.nn.functional as F
 
 try:
-    import cv2  # type: ignore
+    import cv2
     HAS_CV2 = True
 except Exception:
     HAS_CV2 = False
@@ -24,7 +24,7 @@ except Exception:
 
 def _load_font(size: int = 16) -> ImageFont.FreeTypeFont:
     candidates = [
-        "C:/Windows/Fonts/msyh.ttc",  # Microsoft YaHei
+        "C:/Windows/Fonts/msyh.ttc",
         "C:/Windows/Fonts/simhei.ttf",
         "C:/Windows/Fonts/simsun.ttc",
     ]

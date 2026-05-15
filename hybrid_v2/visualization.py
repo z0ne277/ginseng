@@ -1,11 +1,11 @@
-"""
-Ginseng feature visualization (v2)
+\
+\
+\
+\
+\
+\
+\
 
-Focus:
-1) Interpretable image-space topology ops (erosion/skeleton/edge/frequency) on binary input.
-2) Topology branch fusion weights (legacy/skeleton/edge/frequency).
-3) Optional Grad-CAM on visual backbone.
-"""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ from matplotlib import font_manager
 import matplotlib.pyplot as plt
 
 try:
-    import cv2  # type: ignore
+    import cv2
     HAS_CV2 = True
 except Exception:
     HAS_CV2 = False
@@ -85,7 +85,7 @@ def _parse_named_paths(items: Sequence[str]) -> Dict[str, str]:
 
 def _read_csv_rows(csv_path: str) -> List[Dict]:
     try:
-        import pandas as pd  # type: ignore
+        import pandas as pd
         df = pd.read_csv(csv_path)
         return df.to_dict(orient="records")
     except Exception:
@@ -228,9 +228,9 @@ class GradCAMBackbone:
 
         self._h_fwd = self.target_module.register_forward_hook(self._save_activation)
         try:
-            self._h_bwd = self.target_module.register_full_backward_hook(self._save_gradient)  # type: ignore[attr-defined]
+            self._h_bwd = self.target_module.register_full_backward_hook(self._save_gradient)
         except Exception:
-            self._h_bwd = self.target_module.register_backward_hook(self._save_gradient)  # type: ignore[deprecated-call]
+            self._h_bwd = self.target_module.register_backward_hook(self._save_gradient)
 
     def close(self) -> None:
         self._h_fwd.remove()
@@ -448,14 +448,14 @@ class GinsengFeatureVisualizer:
         base_gray = np.array(binary_l, dtype=np.float32) / 255.0
         base_rgb = np.stack([base_gray, base_gray, base_gray], axis=-1)
 
-        # Legacy branch: multi-scale erosion maps
+
         legacy = branches["legacy"] if ("legacy" in branches) else None
         if legacy is not None and hasattr(legacy, "erosion_layers"):
             for i, erosion in enumerate(legacy.erosion_layers, start=1):
                 eroded = erosion(feat)
                 items.append((f"legacy_erosion_{i}", _feat_to_map(eroded)))
 
-        # Skeleton branch: multi-scale skeleton maps
+
         sk_branch = branches["skeleton"] if ("skeleton" in branches) else None
         if sk_branch is not None and hasattr(sk_branch, "erosion_ops"):
             use_improved = bool(getattr(sk_branch, "use_relu_residual_norm", False))
@@ -473,7 +473,7 @@ class GinsengFeatureVisualizer:
                     skeleton = feat - opened
                 items.append((f"skeleton_{i}", _feat_to_map(skeleton)))
 
-        # Edge branch: sobel / laplacian / morph gradient maps
+
         edge = branches["edge"] if ("edge" in branches) else None
         if edge is not None and hasattr(edge, "sobel_x"):
             edge_x = F.conv2d(feat, edge.sobel_x, padding=1, groups=edge.input_channels)
@@ -487,7 +487,7 @@ class GinsengFeatureVisualizer:
             items.append(("edge_laplacian", _feat_to_map(lap)))
             items.append(("edge_morph_grad", _feat_to_map(morph_grad)))
 
-        # Frequency branch: low/high/band maps
+
         freq = branches["frequency"] if ("frequency" in branches) else None
         if freq is not None:
             blur = F.avg_pool2d(feat, kernel_size=5, stride=1, padding=2)
@@ -551,7 +551,7 @@ class GinsengFeatureVisualizer:
         if not branch_names:
             return
 
-        # Recompute weights (same logic as in forward).
+
         branch_features = [branch_outputs[n] for n in branch_names]
         raw_concat = torch.cat(branch_features, dim=1)
         raw_concat = extractor.branch_dropout(raw_concat)
@@ -588,7 +588,7 @@ class GinsengFeatureVisualizer:
         fig.savefig(out_dir / "branch_weights.png", dpi=150, bbox_inches="tight")
         plt.close(fig)
 
-        # Save raw weights for analysis
+
         with (out_dir / "branch_weights.json").open("w", encoding="utf-8") as f:
             json.dump(
                 {
@@ -601,7 +601,7 @@ class GinsengFeatureVisualizer:
                 indent=2,
             )
 
-        # Save fused topo feature vector
+
         topo_vec = topo[0].detach().cpu().numpy().tolist()
         with (out_dir / "topo_feature.json").open("w", encoding="utf-8") as f:
             json.dump({"topo_feature": topo_vec}, f, ensure_ascii=False)

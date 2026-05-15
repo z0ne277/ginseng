@@ -6,3 +6,5 @@ matplotlib
 torch
 torchvision
 tqdm
+groundingdino-py
+segment-anything

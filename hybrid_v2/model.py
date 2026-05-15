@@ -1,16 +1,16 @@
-"""
-改进的多拓扑支路特征提取网络
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
 
-核心改进:
-1. 多种拓扑提取方式组合:
-   - 膨胀腐蚀支路 (Erosion/Dilation)
-   - 骨架化支路 (Skeletonization)
-   - 边缘检测支路 (Edge Detection)
-   - 频域拓扑支路 (Frequency Domain)
-2. 保持固定的形态学操作（不使用可学习腐蚀，避免退化）
-3. 简化融合策略，避免过拟合
-4. 支持灵活的支路组合
-"""
 
 import torch
 import torch.nn as nn
@@ -20,11 +20,11 @@ from typing import Tuple, Dict, Optional, List
 import math
 
 
-# ============================================================
-# 基础形态学操作（固定，不可学习）
-# ============================================================
+
+
+
 class MorphologicalErosion(nn.Module):
-    """形态学腐蚀层：固定操作，保证拓扑特征的稳定性"""
+
 
     def __init__(self, kernel_size: int = 3, num_erosions: int = 1):
         super().__init__()
@@ -44,7 +44,7 @@ class MorphologicalErosion(nn.Module):
 
 
 class MorphologicalDilation(nn.Module):
-    """形态学膨胀层"""
+
 
     def __init__(self, kernel_size: int = 3, num_dilations: int = 1):
         super().__init__()
@@ -64,9 +64,9 @@ class MorphologicalDilation(nn.Module):
 
 
 class LegacyTopoBranch(nn.Module):
-    """
-    旧版拓扑支路：直接复刻 old 代码里的多尺度腐蚀特征提取流程
-    """
+\
+\
+
 
     def __init__(
         self,
@@ -117,13 +117,13 @@ class LegacyTopoBranch(nn.Module):
         return F.normalize(topo_final, dim=1)
 
 
-# ============================================================
-# 支路1: 膨胀腐蚀支路 (Erosion-Dilation Branch)
-# ============================================================
+
+
+
 class ErosionDilationBranch(nn.Module):
-    """
-    改进的膨胀/腐蚀支路：引入更深的瓶颈结构和局部上下文聚合，输出更高维特征。
-    """
+\
+\
+
 
     def __init__(
         self,
@@ -176,13 +176,13 @@ class ErosionDilationBranch(nn.Module):
         return output
 
 
-# ============================================================
-# 支路2: 骨架化支路 (Skeletonization Branch)
-# ============================================================
+
+
+
 class SkeletonBranch(nn.Module):
-    """
-    改进的骨架化支路：多尺度 + 可学习融合 + 注意力加权。
-    """
+\
+\
+
 
     def __init__(
         self,
@@ -252,7 +252,7 @@ class SkeletonBranch(nn.Module):
             encoded = encoder(skeleton)
             skeleton_features.append(encoded)
 
-        stacked = torch.stack(skeleton_features, dim=1)  # [B, num_scales, output_dim]
+        stacked = torch.stack(skeleton_features, dim=1)
         concat = torch.cat(skeleton_features, dim=1)
         attn = self.scale_attention(concat).unsqueeze(-1)
         fused = (stacked * attn).sum(dim=1)
@@ -260,13 +260,13 @@ class SkeletonBranch(nn.Module):
         return fused
 
 
-# ============================================================
-# 支路3: 边缘检测支路 (Edge Detection Branch)
-# ============================================================
+
+
+
 class EdgeDetectionBranch(nn.Module):
-    """
-    改进的边缘检测支路：多算子特征 + 轻量注意力融合。
-    """
+\
+\
+
 
     def __init__(
         self,
@@ -343,13 +343,13 @@ class EdgeDetectionBranch(nn.Module):
         return output
 
 
-# ============================================================
-# 支路4: 频域拓扑支路 (Frequency Domain Branch)
-# ============================================================
+
+
+
 class FrequencyDomainBranch(nn.Module):
-    """
-    改进的频域支路：分离低/中/高频，并通过自适应融合捕获整体+细节。
-    """
+\
+\
+
 
     def __init__(
         self,
@@ -431,13 +431,13 @@ class FrequencyDomainBranch(nn.Module):
         return output
 
 
-# ============================================================
-# 多支路拓扑特征提取器
-# ============================================================
+
+
+
 class MultiTopoFeatureExtractor(nn.Module):
-    """
-    多支路拓扑特征提取器：旧版腐蚀支路 + 强化版三支路 + 自适应权重。
-    """
+\
+\
+
 
     def __init__(
         self,
@@ -456,7 +456,7 @@ class MultiTopoFeatureExtractor(nn.Module):
         self.topo_dim = topo_dim
         self.use_adaptive_weights = True
         self.preserve_legacy_residual = preserve_legacy_residual
-        # alpha = sigmoid(fusion_alpha) in (0, 1); init small => output ~ legacy
+
         self.fusion_alpha = nn.Parameter(torch.tensor(float(fusion_alpha_init)))
 
         self.branches = nn.ModuleDict()
@@ -542,7 +542,7 @@ class MultiTopoFeatureExtractor(nn.Module):
         )
 
     def forward(self, feat: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
-        # Special-case: only legacy branch enabled => exact legacy output (no extra fusion MLP)
+
         if self.num_branches == 1 and self.branch_names[0] == 'legacy':
             legacy_feat = self.branches['legacy'](feat)
             return legacy_feat, {'legacy': legacy_feat}
@@ -566,10 +566,10 @@ class MultiTopoFeatureExtractor(nn.Module):
         else:
             weights = F.softmax(self.static_branch_weights, dim=0).unsqueeze(0).expand(B, -1)
 
-        # Preserve legacy branch as a residual base: let the fusion branch focus on "others".
+
         legacy_raw = None
         if self.preserve_legacy_residual and ('legacy' in self.branch_names):
-            legacy_raw = self.branches['legacy'](feat)  # LegacyTopoBranch already returns L2-normalized
+            legacy_raw = self.branches['legacy'](feat)
             legacy_idx = self.branch_names.index('legacy')
             weights = weights.clone()
             weights[:, legacy_idx] = 0.0
@@ -594,15 +594,15 @@ class MultiTopoFeatureExtractor(nn.Module):
 
 
 class MoCoV3HybridTopo(nn.Module):
-    """
-    MoCoV3 + 多支路拓扑网络
+\
+\
+\
+\
+\
+\
+\
+\
 
-    特点:
-    1. 多种拓扑提取方式组合
-    2. 固定形态学操作，保证稳定性
-    3. 简单融合策略，避免过拟合
-    4. 支持灵活的支路启用/禁用
-    """
 
     def __init__(
         self,
@@ -645,24 +645,24 @@ class MoCoV3HybridTopo(nn.Module):
         print(f"    - Frequency Domain: {use_frequency_branch}")
         print(f"{'=' * 70}\n")
 
-        # ========== 查询编码器（可训练） ==========
-        self.encoder_q = models.resnet50(weights="IMAGENET1K_V1")
-        resnet_dim = self.encoder_q.fc.in_features  # 2048
 
-        # 移除分类头，保留到avgpool前的特征
+        self.encoder_q = models.resnet50(weights="IMAGENET1K_V1")
+        resnet_dim = self.encoder_q.fc.in_features
+
+
         self.encoder_q = nn.Sequential(*list(self.encoder_q.children())[:-2])
 
-        # 全局平均池化
+
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
-        # 视觉特征投影头
+
         self.visual_mlp_q = nn.Sequential(
             nn.Linear(resnet_dim, 512),
             nn.ReLU(inplace=True),
             nn.Linear(512, feature_dim)
         )
 
-        # ========== 键编码器（动量更新） ==========
+
         self.encoder_k = models.resnet50(weights="IMAGENET1K_V1")
         self.encoder_k = nn.Sequential(*list(self.encoder_k.children())[:-2])
 
@@ -672,7 +672,7 @@ class MoCoV3HybridTopo(nn.Module):
             nn.Linear(512, feature_dim)
         )
 
-        # ========== 多支路拓扑提取器 ==========
+
         self.topo_extractor_q = MultiTopoFeatureExtractor(
             input_channels=resnet_dim,
             topo_dim=topo_dim,
@@ -690,38 +690,38 @@ class MoCoV3HybridTopo(nn.Module):
             use_frequency_branch=use_frequency_branch
         )
 
-        # ========== 队列：视觉特征队列 ==========
+
         self.register_buffer("visual_queue", torch.randn(feature_dim, K))
         self.visual_queue = F.normalize(self.visual_queue, dim=0)
 
-        # ========== 队列：拓扑特征队列 ==========
+
         self.register_buffer("topo_queue", torch.randn(topo_dim, K))
         self.topo_queue = F.normalize(self.topo_queue, dim=0)
 
         self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
 
-        # ========== 初始化键编码器 ==========
+
         self._init_key_encoder()
 
         self.to(self.device)
 
     def _init_key_encoder(self):
-        """初始化键编码器（复制查询编码器权重）"""
-        # 编码器
+
+
         for pq, pk in zip(
             self.encoder_q.parameters(), self.encoder_k.parameters()
         ):
             pk.data.copy_(pq.data)
             pk.requires_grad = False
 
-        # 视觉投影头
+
         for pq, pk in zip(
             self.visual_mlp_q.parameters(), self.visual_mlp_k.parameters()
         ):
             pk.data.copy_(pq.data)
             pk.requires_grad = False
 
-        # 拓扑提取器
+
         for pq, pk in zip(
             self.topo_extractor_q.parameters(),
             self.topo_extractor_k.parameters()
@@ -734,52 +734,52 @@ class MoCoV3HybridTopo(nn.Module):
         img1: torch.Tensor,
         img2: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """前向传播"""
+
         img1, img2 = img1.to(self.device), img2.to(self.device)
 
-        # ========== 查询编码路径（可训练） ==========
+
         feat_q = self.encoder_q(img1)
 
-        # 视觉特征路径
+
         visual_q = self.avgpool(feat_q).flatten(1)
         visual_q = self.visual_mlp_q(visual_q)
         visual_q = F.normalize(visual_q, dim=1)
 
-        # 拓扑特征路径
+
         topo_q, _ = self.topo_extractor_q(feat_q)
 
-        # ========== 键编码路径（无梯度） ==========
+
         with torch.no_grad():
             self.momentum_update_key_encoder()
 
             feat_k = self.encoder_k(img2)
 
-            # 视觉特征路径
+
             visual_k = self.avgpool(feat_k).flatten(1)
             visual_k = self.visual_mlp_k(visual_k)
             visual_k = F.normalize(visual_k, dim=1)
 
-            # 拓扑特征路径
+
             topo_k, _ = self.topo_extractor_k(feat_k)
 
         return visual_q, visual_k, topo_q, topo_k
 
     @torch.no_grad()
     def momentum_update_key_encoder(self):
-        """使用动量更新键编码器"""
-        # 编码器
+
+
         for pq, pk in zip(
             self.encoder_q.parameters(), self.encoder_k.parameters()
         ):
             pk.data.mul_(self.m).add_(pq.data, alpha=1 - self.m)
 
-        # 视觉投影头
+
         for pq, pk in zip(
             self.visual_mlp_q.parameters(), self.visual_mlp_k.parameters()
         ):
             pk.data.mul_(self.m).add_(pq.data, alpha=1 - self.m)
 
-        # 拓扑提取器
+
         for pq, pk in zip(
             self.topo_extractor_q.parameters(),
             self.topo_extractor_k.parameters()
@@ -793,10 +793,10 @@ class MoCoV3HybridTopo(nn.Module):
         topo_q: torch.Tensor,
         topo_k: torch.Tensor
     ) -> Tuple[torch.Tensor, Dict[str, float]]:
-        """双路对比损失：视觉 + 拓扑"""
+
         N = visual_q.shape[0]
 
-        # 视觉对比损失
+
         visual_l_pos = torch.einsum('nc,nc->n', visual_q, visual_k).unsqueeze(-1)
         visual_l_neg = torch.einsum(
             'nc,ck->nk', visual_q, self.visual_queue.clone().detach()
@@ -806,7 +806,7 @@ class MoCoV3HybridTopo(nn.Module):
         labels = torch.zeros(N, dtype=torch.long).to(visual_q.device)
         visual_loss = F.cross_entropy(visual_logits, labels)
 
-        # 拓扑对比损失
+
         topo_l_pos = torch.einsum('nc,nc->n', topo_q, topo_k).unsqueeze(-1)
         topo_l_neg = torch.einsum(
             'nc,ck->nk', topo_q, self.topo_queue.clone().detach()
@@ -815,7 +815,7 @@ class MoCoV3HybridTopo(nn.Module):
         topo_logits = torch.cat([topo_l_pos, topo_l_neg], dim=1) / self.T
         topo_loss = F.cross_entropy(topo_logits, labels)
 
-        # 加权组合
+
         total_loss = (1 - self.topo_weight) * visual_loss + self.topo_weight * topo_loss
 
         diagnostics = {
@@ -828,7 +828,7 @@ class MoCoV3HybridTopo(nn.Module):
 
     @torch.no_grad()
     def update_queue(self, visual_k: torch.Tensor, topo_k: torch.Tensor):
-        """更新队列"""
+
         visual_k = F.normalize(visual_k, dim=1)
         topo_k = F.normalize(topo_k, dim=1)
 
@@ -858,7 +858,7 @@ class MoCoV3HybridTopo(nn.Module):
         use_query_encoder: bool = True,
         feature_type: str = 'visual'
     ) -> torch.Tensor:
-        """提取特征"""
+
         img = img.to(self.device)
 
         with torch.no_grad():
@@ -895,17 +895,17 @@ class MoCoV3HybridTopo(nn.Module):
         return feat
 
 
-# ============================================================
-# 用于ReID的拓扑模块（可插拔）
-# ============================================================
-class TopologyModule(nn.Module):
-    """
-    可插拔的拓扑模块，用于添加到其他ReID模型中
 
-    使用方式:
-    1. 在backbone输出后添加此模块
-    2. 将拓扑特征与原有特征拼接/相加
-    """
+
+
+class TopologyModule(nn.Module):
+\
+\
+\
+\
+\
+\
+
 
     def __init__(
         self,
@@ -913,7 +913,7 @@ class TopologyModule(nn.Module):
         topo_dim: int = 128,
         use_legacy_branch: bool = True,
         use_skeleton_branch: bool = True,
-        use_edge_branch: bool = False,  # ReID场景可能不需要
+        use_edge_branch: bool = False,
         use_frequency_branch: bool = False
     ):
         super().__init__()
@@ -930,12 +930,12 @@ class TopologyModule(nn.Module):
         self.topo_dim = topo_dim
 
     def forward(self, feat: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            feat: Backbone输出的特征图 [B, C, H, W]
+\
+\
+\
+\
+\
+\
 
-        Returns:
-            topo_feat: 拓扑特征 [B, topo_dim]
-        """
         topo_feat, _ = self.topo_extractor(feat)
         return topo_feat

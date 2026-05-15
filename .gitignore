@@ -10,6 +10,11 @@ weights/
 outputs/
 cache/
 checkpoints/
+ginseng_extractor/model/
+ginseng_extractor/testImage/
+ginseng_extractor/output_image/
+ginseng_extractor/processed_result*/
+ginseng_extractor/*_result*/
 batch_results*/
 results*/
 visualizations*/

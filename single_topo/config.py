@@ -78,10 +78,10 @@ def load_config(
     cli_overrides: Optional[Dict[str, Any]] = None,
     kv_overrides: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
-    """
-    Precedence: default.json < --config < CLI kwargs < --override key=value
-    Returns merged config for `common` + `section`.
-    """
+\
+\
+\
+
     cfg = load_json(get_default_config_path())
 
     if config_path is not None:

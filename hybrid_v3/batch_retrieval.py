@@ -1,14 +1,14 @@
-"""
-改进多支路拓扑网络的批量检索和评估脚本
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
 
-功能:
-1. 批量处理多个查询组
-2. 对每个查询计算评估指标: MRR, MAP, Recall@K
-3. 生成整体评估报告
-4. 可视化每个查询的检索结果
-
-基于: hybrid/model.py (MoCoV3HybridTopo)
-"""
 
 import os
 import sys
@@ -25,18 +25,18 @@ from PIL import Image
 from torchvision import transforms
 import json
 
-# 设置中文字体支持
+
 matplotlib.rcParams['font.sans-serif'] = ['SimHei']
 matplotlib.rcParams['axes.unicode_minus'] = False
 
 from model import MoCoV3HybridTopo
 from config import load_config
 
-# ============================================================
-# 配置参数
-# ============================================================
-# ??????
-# Global runtime config (filled in main)
+
+
+
+
+
 config = {}
 image_preprocess = None
 
@@ -71,11 +71,11 @@ def build_preprocess(cfg):
         transforms.Normalize(mean=preprocess_cfg.get('mean', [0.5, 0.5, 0.5]), std=preprocess_cfg.get('std', [0.5, 0.5, 0.5]))
     ])
 
-# ============================================================
-# 工具函数
-# ============================================================
+
+
+
 def normalize_path(path):
-    """规范化路径用于比较"""
+
     try:
         abs_path = os.path.abspath(path)
         return os.path.normpath(abs_path).lower()
@@ -85,13 +85,13 @@ def normalize_path(path):
 
 
 def clean_query_groups(query_groups_raw):
-    """
-    清理和验证查询组配置
+\
+\
+\
+\
+\
+\
 
-    返回:
-        cleaned_groups: 有效的查询组列表
-        skipped_groups: 跳过的查询组信息
-    """
     cleaned_groups = []
     skipped_groups = []
 
@@ -100,7 +100,7 @@ def clean_query_groups(query_groups_raw):
         group_name = group.get('name', f'group_{idx}')
         query_img = group.get('query_image')
 
-        # 检查查询图像是否存在
+
         if not query_img or not os.path.exists(query_img):
             skip_reason = f"Query image not found: {query_img}"
             skipped_groups.append({
@@ -110,7 +110,7 @@ def clean_query_groups(query_groups_raw):
             })
             continue
 
-        # 检查相关文档
+
         same_ginsengs = group.get('same_ginsengs', [])
         valid_ginsengs = []
         for path in same_ginsengs:
@@ -127,7 +127,7 @@ def clean_query_groups(query_groups_raw):
             })
             continue
 
-        # 添加有效的查询组
+
         cleaned_group = {
             'name': group_name,
             'query_image': query_img,
@@ -139,7 +139,7 @@ def clean_query_groups(query_groups_raw):
 
 
 def print_cleaning_report(skipped_groups):
-    """打印清理报告"""
+
     if not skipped_groups:
         print("✅ All query groups are valid!")
         return
@@ -153,11 +153,11 @@ def print_cleaning_report(skipped_groups):
     print("\n" + "=" * 100 + "\n")
 
 
-# ============================================================
-# 特征提取
-# ============================================================
+
+
+
 def get_fused_features(model, img_path, device):
-    """Extract features according to config['feature_type'] (visual/topo/both)."""
+
     img = Image.open(img_path).convert("L").convert("RGB")
     img_tensor = image_preprocess(img).unsqueeze(0).to(device)
 
@@ -193,7 +193,7 @@ def get_fused_features(model, img_path, device):
             use_query_encoder=True,
             feature_type='topo'
         )
-        # Weighted fusion to avoid topology branch dominating retrieval.
+
         alpha = float(config.get('fusion_alpha', 0.15))
         alpha = max(0.0, min(1.0, alpha))
         visual_feat = F.normalize(visual_feat, dim=1)
@@ -202,36 +202,36 @@ def get_fused_features(model, img_path, device):
         fused_feat = F.normalize(fused_feat, dim=1)
         return fused_feat.squeeze()
 
-# ============================================================
-# 检索函数
-# ============================================================
-def retrieve_topk(query_img_path, model, feats_tensor, feats_paths, device, k=10):
-    """
-    检索Top-K最相似图像,并过滤掉查询图像本身
 
-    返回:
-        results: [{'path': str, 'score': float, 'rank': int}, ...] 列表
-    """
+
+
+def retrieve_topk(query_img_path, model, feats_tensor, feats_paths, device, k=10):
+\
+\
+\
+\
+\
+
     print(f"🔍 Retrieving similar images for: {Path(query_img_path).name}")
 
-    # 提取查询特征
+
     query_feat = get_fused_features(model, query_img_path, device)
 
     if feats_tensor.device != device:
         print(f"⚠️  WARNING: feats_tensor on {feats_tensor.device}, moving to {device}")
         feats_tensor = feats_tensor.to(device)
 
-    # 归一化特征
+
     feats_tensor_norm = F.normalize(feats_tensor, dim=1)
     query_feat_norm = F.normalize(query_feat.unsqueeze(0), dim=1).squeeze(0)
 
-    # 计算相似度
+
     sims = torch.mv(feats_tensor_norm, query_feat_norm)
 
-    # 获取Top-K (多取几个以防过滤后不够)
+
     topk_vals, topk_indices = torch.topk(sims, min(k + 5, len(sims)))
 
-    # 过滤掉查询图像本身
+
     query_img_norm = normalize_path(query_img_path)
     results = []
     for j, i in enumerate(topk_indices):
@@ -254,27 +254,27 @@ def retrieve_topk(query_img_path, model, feats_tensor, feats_paths, device, k=10
     return results
 
 
-# ============================================================
-# 评估类
-# ============================================================
+
+
+
 class RetrievalEvaluator:
-    """检索评估器,计算各种评估指标"""
+
 
     def __init__(self, results, relevant_paths, query_image_path=None, k_values=[1, 5, 10, 20]):
-        """
-        Args:
-            results: 检索结果列表 [{'path': str, 'score': float, 'rank': int}, ...]
-            relevant_paths: 相关文档路径列表
-            query_image_path: 查询图像路径(用于过滤)
-            k_values: 计算Recall的K值列表
-        """
+\
+\
+\
+\
+\
+\
+
         self.results = results
         self.relevant_paths = set(normalize_path(p) for p in relevant_paths)
         self.query_image_path = query_image_path
         self.k_values = k_values
         self.metrics = {}
 
-        # 从相关文档中移除查询图像本身
+
         if query_image_path is not None:
             query_norm = normalize_path(query_image_path)
             if query_norm in self.relevant_paths:
@@ -283,21 +283,21 @@ class RetrievalEvaluator:
         self._calculate_metrics()
 
     def _calculate_metrics(self):
-        """计算所有评估指标"""
+
         self.metrics['mrr'] = self._calculate_mrr()
         self.metrics['map'] = self._calculate_map()
         for k in self.k_values:
             self.metrics[f'recall@{k}'] = self._calculate_recall_at_k(k)
 
     def _calculate_mrr(self):
-        """Mean Reciprocal Rank: 第一个相关文档的倒数排名"""
+
         for result in self.results:
             if self._is_relevant(result['path']):
                 return 1.0 / result['rank']
         return 0.0
 
     def _calculate_map(self):
-        """Mean Average Precision"""
+
         if len(self.relevant_paths) == 0:
             return 0.0
 
@@ -313,7 +313,7 @@ class RetrievalEvaluator:
         return sum_precisions / len(self.relevant_paths)
 
     def _calculate_recall_at_k(self, k):
-        """Recall@K: Top-K中找到的相关文档比例"""
+
         if len(self.relevant_paths) == 0:
             return 0.0
 
@@ -321,15 +321,15 @@ class RetrievalEvaluator:
         return relevant_in_topk / len(self.relevant_paths)
 
     def _is_relevant(self, result_path):
-        """判断结果是否相关"""
+
         return normalize_path(result_path) in self.relevant_paths
 
     def get_relevant_ranks(self):
-        """获取所有相关文档的排名"""
+
         return sorted([r['rank'] for r in self.results if self._is_relevant(r['path'])])
 
     def print_report(self):
-        """打印评估报告"""
+
         print("\n" + "-" * 100)
         print(f"  MRR:          {self.metrics['mrr']:.4f}")
         print(f"  MAP:          {self.metrics['map']:.4f}")
@@ -341,19 +341,19 @@ class RetrievalEvaluator:
         print("-" * 100)
 
     def get_metrics_dict(self):
-        """返回指标字典"""
+
         return self.metrics
 
 
 class BatchEvaluator:
-    """批量评估器,汇总所有查询的评估结果"""
+
 
     def __init__(self, k_values=[1, 5, 10, 20]):
         self.k_values = k_values
         self.results = []
 
     def add_result(self, query_name, evaluator):
-        """添加单个查询的评估结果"""
+
         self.results.append({
             'query_name': query_name,
             'metrics': evaluator.get_metrics_dict(),
@@ -362,7 +362,7 @@ class BatchEvaluator:
         })
 
     def print_summary(self):
-        """打印汇总统计"""
+
         if not self.results:
             print("❌ No results to summarize")
             return {}
@@ -414,7 +414,7 @@ class BatchEvaluator:
         return avg_metrics
 
     def save_summary(self, output_folder):
-        """保存评估报告到文件"""
+
         os.makedirs(output_folder, exist_ok=True)
         summary_file = os.path.join(output_folder, 'batch_summary.txt')
 
@@ -485,21 +485,21 @@ class BatchEvaluator:
         print(f"📄 Summary saved to: {summary_file}")
 
 
-# ============================================================
-# 可视化
-# ============================================================
+
+
+
 def visualize_results(query_img_path, results, same_ginseng_paths, output_folder,
                       ncols=5, nrows=2, img_per_colsize=6):
-    """可视化检索结果并支持分页浏览"""
+
     os.makedirs(output_folder, exist_ok=True)
 
-    # 保存查询图像
+
     query_img = Image.open(query_img_path).convert("L").convert("RGB")
     query_save_path = os.path.join(output_folder, 'query.jpg')
     query_img.save(query_save_path)
     print(f"📸 Query image saved: {query_save_path}")
 
-    # 规范化相关路径
+
     relevant_paths_norm = set(normalize_path(path) for path in same_ginseng_paths)
     query_norm = normalize_path(query_img_path)
     if query_norm in relevant_paths_norm:
@@ -509,7 +509,7 @@ def visualize_results(query_img_path, results, same_ginseng_paths, output_folder
     def is_relevant(result_path):
         return normalize_path(result_path) in relevant_paths_norm
 
-    # 分页信息
+
     num_results = len(results)
     imgs_per_page = ncols * nrows
     num_pages = math.ceil(num_results / imgs_per_page)
@@ -519,7 +519,7 @@ def visualize_results(query_img_path, results, same_ginseng_paths, output_folder
         return
 
     def show_page(page_idx):
-        """显示指定页"""
+
         plt.clf()
         start = page_idx * imgs_per_page
         end = min(start + imgs_per_page, num_results)
@@ -557,11 +557,11 @@ def visualize_results(query_img_path, results, same_ginseng_paths, output_folder
         plt.tight_layout(rect=[0, 0, 1, 0.95])
         plt.draw()
 
-    # 创建图窗
+
     fig = plt.figure(figsize=(ncols * img_per_colsize, nrows * img_per_colsize + 1))
     current_page = [0]
 
-    # 添加翻页按钮
+
     axprev = plt.axes([0.35, 0.01, 0.1, 0.06])
     axnext = plt.axes([0.55, 0.01, 0.1, 0.06])
     bprev = Button(axprev, "← 上一页")
@@ -594,7 +594,7 @@ def visualize_results(query_img_path, results, same_ginseng_paths, output_folder
 
 def save_results_to_file(query_group_name, query_img_path, results, same_ginseng_paths,
                          metrics, output_folder, query_tag=None):
-    """保存检索结果到文件"""
+
     os.makedirs(output_folder, exist_ok=True)
     tag = f"_{query_tag}" if query_tag else ""
     result_file = os.path.join(output_folder, f'{query_group_name}{tag}_results.txt')
@@ -644,9 +644,9 @@ def save_results_to_file(query_group_name, query_img_path, results, same_ginseng
     print(f"📄 Results saved to: {result_file}")
 
 
-# ============================================================
-# 主函数
-# ============================================================
+
+
+
 def main():
 
     global config, image_preprocess
@@ -663,7 +663,7 @@ def main():
     print(f"Fusion alpha: {config.get('fusion_alpha', 0.15)}")
     print("=" * 100 + "\n")
 
-    # 清理配置
+
     print("🧹 Cleaning configuration...")
     cleaned_groups, skipped_groups = clean_query_groups(config['query_groups'])
     print_cleaning_report(skipped_groups)
@@ -674,7 +674,7 @@ def main():
         print("❌ No valid query groups after cleaning!")
         return
 
-    # 加载模型
+
     print("🔧 Loading model...")
     if not os.path.exists(config['model_path']):
         print(f"❌ Model file not found: {config['model_path']}")
@@ -715,7 +715,7 @@ def main():
         print(f"❌ Error loading model: {e}")
         return
 
-    # 加载图库特征
+
     print("💾 Loading gallery features...")
     if not os.path.exists(config['feature_path']):
         print(f"❌ Feature file not found: {config['feature_path']}")
@@ -738,12 +738,12 @@ def main():
         print(f"❌ Error loading features: {e}")
         return
 
-    # 批量检索
+
     print("=" * 100)
     print("🚀 Starting batch retrieval...")
     print("=" * 100 + "\n")
 
-    # 这里显式指定需要统计的K值,包含Recall@20
+
     batch_evaluator = BatchEvaluator(k_values=[1, 5, 10, 20])
     successful_queries = 0
     failed_queries = 0
@@ -758,7 +758,7 @@ def main():
         print(f"  Expected relevant docs: {len(same_ginsengs)}")
 
         try:
-            # 执行检索
+
             results = retrieve_topk(
                 query_image,
                 model,
@@ -781,7 +781,7 @@ def main():
             continue
 
         try:
-            # 评估,同时计算Recall@1/5/10/20
+
             evaluator = RetrievalEvaluator(
                 results=results,
                 relevant_paths=same_ginsengs,
@@ -792,7 +792,7 @@ def main():
             evaluator.print_report()
             batch_evaluator.add_result(group_name, evaluator)
 
-            # 保存结果
+
             query_tag = Path(query_image).stem
             output_group_folder = os.path.join(config['output_folder'], f"{group_name}_{query_tag}")
             save_results_to_file(
@@ -813,7 +813,7 @@ def main():
 
         print()
 
-    # 打印汇总报告
+
     print("\n" + "=" * 100)
     print("📊 BATCH PROCESSING SUMMARY")
     print("=" * 100)

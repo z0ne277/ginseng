@@ -1,11 +1,11 @@
-"""
-改进版多支路拓扑网络训练脚本
+\
+\
+\
+\
+\
+\
+\
 
-特点:
-1. 支持灵活的支路组合配置
-2. 详细的训练日志和监控
-3. 支持消融实验
-"""
 
 import os
 import sys
@@ -26,16 +26,16 @@ import argparse
 from config import load_config
 
 
-# ============================================================
-# 默认配置参数
-# ============================================================
+
+
+
 def get_default_config():
     return load_config("train")
 
 
-# ============================================================
-# 日志函数
-# ============================================================
+
+
+
 class Logger:
     def __init__(self, log_file):
         self.log_file = log_file
@@ -48,11 +48,11 @@ class Logger:
             f.write(formatted_msg + '\n')
 
 
-# ============================================================
-# 数据加载
-# ============================================================
+
+
+
 def get_data_loaders(config, image_preprocess, logger):
-    """创建数据加载器"""
+
     logger.log("=" * 70)
     logger.log("Loading datasets...")
     logger.log("=" * 70)
@@ -113,11 +113,11 @@ def get_data_loaders(config, image_preprocess, logger):
     return {'train': train_loader, 'val': val_loader, 'test': test_loader}
 
 
-# ============================================================
-# 模型初始化
-# ============================================================
+
+
+
 def create_model(config, device, logger):
-    """创建模型"""
+
     logger.log("=" * 70)
     logger.log("Creating Multi-Branch Topology Model...")
     logger.log("=" * 70)
@@ -142,7 +142,7 @@ def create_model(config, device, logger):
     logger.log(f"Total parameters: {total_params:,}")
     logger.log(f"Trainable parameters: {trainable_params:,}")
 
-    # 打印支路信息
+
     enabled = []
     if config['use_legacy_branch']: enabled.append('Legacy')
     if config['use_skeleton_branch']: enabled.append('Skeleton')
@@ -153,16 +153,16 @@ def create_model(config, device, logger):
     return model
 
 
-# ============================================================
-# 优化器和调度器
-# ============================================================
+
+
+
 def create_optimizer_and_scheduler(model, config, logger):
-    """创建优化器和学习率调度器"""
+
     logger.log("=" * 70)
     logger.log("Creating optimizer and scheduler...")
     logger.log("=" * 70)
 
-    # 分组学习率：backbone用较小学习率，拓扑模块用较大学习率
+
     backbone_params = []
     topo_params = []
     other_params = []
@@ -227,11 +227,11 @@ def create_optimizer_and_scheduler(model, config, logger):
     return optimizer, scheduler
 
 
-# ============================================================
-# 验证函数
-# ============================================================
+
+
+
 def evaluate_loss(model, data_loader, device):
-    """计算验证损失"""
+
     model.eval()
     total_visual_loss = 0.0
     total_topo_loss = 0.0
@@ -253,11 +253,11 @@ def evaluate_loss(model, data_loader, device):
             total_loss / num_batches)
 
 
-# ============================================================
-# 训练函数
-# ============================================================
+
+
+
 def train_epoch(model, train_loader, optimizer, device, config, epoch, logger):
-    """训练一个epoch"""
+
     model.train()
     total_visual_loss = 0.0
     total_topo_loss = 0.0
@@ -269,35 +269,35 @@ def train_epoch(model, train_loader, optimizer, device, config, epoch, logger):
     for batch_idx, (img1, img2) in enumerate(train_loader):
         img1, img2 = img1.to(device), img2.to(device)
 
-        # Forward pass
+
         optimizer.zero_grad()
         visual_q, visual_k, topo_q, topo_k = model(img1, img2)
         loss, diagnostics = model.contrastive_loss(visual_q, visual_k, topo_q, topo_k)
 
-        # Backward pass
+
         loss.backward()
 
-        # Gradient clipping
+
         if config['gradient_clip_max_norm'] > 0:
             torch.nn.utils.clip_grad_norm_(
                 model.parameters(),
                 max_norm=config['gradient_clip_max_norm']
             )
 
-        # Update parameters
+
         optimizer.step()
 
-        # Update momentum encoder and queue
+
         with torch.no_grad():
             model.momentum_update_key_encoder()
             model.update_queue(visual_k, topo_k)
 
-        # Accumulate losses
+
         total_visual_loss += diagnostics['visual_loss']
         total_topo_loss += diagnostics['topo_loss']
         total_loss += diagnostics['total_loss']
 
-        # Print progress
+
         if (batch_idx + 1) % max(1, num_batches // 5) == 0:
             progress = (batch_idx + 1) / num_batches * 100
             avg_visual = total_visual_loss / (batch_idx + 1)
@@ -313,7 +313,7 @@ def train_epoch(model, train_loader, optimizer, device, config, epoch, logger):
                 f"| ETA: {eta/60:.1f}min"
             )
 
-    # Calculate epoch averages
+
     avg_epoch_visual_loss = total_visual_loss / num_batches
     avg_epoch_topo_loss = total_topo_loss / num_batches
     avg_epoch_loss = total_loss / num_batches
@@ -323,11 +323,11 @@ def train_epoch(model, train_loader, optimizer, device, config, epoch, logger):
     return avg_epoch_visual_loss, avg_epoch_topo_loss, avg_epoch_loss, epoch_time
 
 
-# ============================================================
-# 主训练函数
-# ============================================================
+
+
+
 def train_model(model, data_loaders, device, optimizer, scheduler, config, logger):
-    """主训练循环"""
+
     logger.log("=" * 70)
     logger.log("Starting training with Multi-Branch Topology Network...")
     logger.log("=" * 70 + "\n")
@@ -351,14 +351,14 @@ def train_model(model, data_loaders, device, optimizer, scheduler, config, logge
         'epoch_times': []
     }
 
-    # Training loop
+
     for epoch in range(config['num_epochs']):
         logger.log("=" * 70)
 
-        # 获取当前学习率
+
         current_lr = optimizer.param_groups[0]['lr']
 
-        # Learning rate warmup (手动warmup)
+
         if epoch < config['warmup_epochs'] and config['lr_scheduler'] != 'cosine_warmup':
             warmup_progress = (epoch + 1) / config['warmup_epochs']
             for i, param_group in enumerate(optimizer.param_groups):
@@ -367,7 +367,7 @@ def train_model(model, data_loaders, device, optimizer, scheduler, config, logge
             current_lr = optimizer.param_groups[1]['lr']
             logger.log(f"Warmup epoch {epoch + 1}/{config['warmup_epochs']}, LR: {current_lr:.6f}\n")
 
-        # Training phase
+
         train_visual_loss, train_topo_loss, train_total_loss, epoch_time = train_epoch(
             model, data_loaders['train'], optimizer, device, config, epoch, logger
         )
@@ -379,7 +379,7 @@ def train_model(model, data_loaders, device, optimizer, scheduler, config, logge
         logger.log(f"   Train Topo Loss: {train_topo_loss:.4f}")
         logger.log(f"   Train Total Loss: {train_total_loss:.4f}")
 
-        # Validation phase
+
         val_visual_loss, val_topo_loss, val_total_loss = evaluate_loss(
             model, data_loaders['val'], device
         )
@@ -390,7 +390,7 @@ def train_model(model, data_loaders, device, optimizer, scheduler, config, logge
         logger.log(f"   Val Total Loss: {val_total_loss:.4f}")
         logger.log(f"   Learning Rate: {current_lr:.6f}")
 
-        # Save history
+
         history['train_visual_loss'].append(train_visual_loss)
         history['train_topo_loss'].append(train_topo_loss)
         history['train_total_loss'].append(train_total_loss)
@@ -400,23 +400,23 @@ def train_model(model, data_loaders, device, optimizer, scheduler, config, logge
         history['learning_rates'].append(current_lr)
         history['epoch_times'].append(epoch_time)
 
-        # Learning rate scheduling
+
         if scheduler is not None:
             if config['lr_scheduler'] == 'plateau':
                 scheduler.step(val_total_loss)
             else:
                 scheduler.step()
 
-        # Save last model
+
         torch.save(model.state_dict(), last_model_path)
 
-        # Periodic save
+
         if (epoch + 1) % config['save_every'] == 0:
             periodic_path = os.path.join(config['checkpoint_dir'], f"model_epoch_{epoch+1}.pth")
             torch.save(model.state_dict(), periodic_path)
             logger.log(f"   Periodic save: {periodic_path}")
 
-        # Early stopping check
+
         if val_total_loss < best_val_loss:
             logger.log(
                 f"\nNEW BEST MODEL! Val Loss: {val_total_loss:.4f} "
@@ -426,10 +426,10 @@ def train_model(model, data_loaders, device, optimizer, scheduler, config, logge
             best_val_loss = val_total_loss
             early_stop_counter = 0
 
-            # Save best model
+
             torch.save(model.state_dict(), best_model_path)
 
-            # Save best checkpoint
+
             checkpoint = {
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -450,7 +450,7 @@ def train_model(model, data_loaders, device, optimizer, scheduler, config, logge
 
         logger.log("=" * 70 + "\n")
 
-        # Early stopping trigger
+
         if early_stop_counter >= patience_limit:
             logger.log(
                 f"\nEARLY STOPPING TRIGGERED! "
@@ -459,7 +459,7 @@ def train_model(model, data_loaders, device, optimizer, scheduler, config, logge
             logger.log(f"   Best validation loss: {best_val_loss:.4f}\n")
             break
 
-    # Save training history
+
     history_path = os.path.join(config['checkpoint_dir'], 'training_history.json')
     with open(history_path, 'w', encoding='utf-8') as f:
         json.dump(history, f, indent=2)
@@ -468,11 +468,11 @@ def train_model(model, data_loaders, device, optimizer, scheduler, config, logge
     return best_model_path, history
 
 
-# ============================================================
-# 测试函数
-# ============================================================
+
+
+
 def test_model(model, test_loader, device, logger):
-    """Test the model on test set"""
+
     logger.log("=" * 70)
     logger.log("Testing on test set...")
     logger.log("=" * 70)
@@ -489,11 +489,11 @@ def test_model(model, test_loader, device, logger):
     return test_visual_loss, test_topo_loss, test_total_loss
 
 
-# ============================================================
-# 特征提取
-# ============================================================
+
+
+
 def extract_and_save_features(model, data_loaders, device, config, logger):
-    """Extract and save features"""
+
     logger.log("=" * 70)
     logger.log("Extracting features from model...")
     logger.log("=" * 70)
@@ -523,17 +523,17 @@ def extract_and_save_features(model, data_loaders, device, config, logger):
             for batch_idx, (img1, img2) in enumerate(loader):
                 img1 = img1.to(device)
 
-                # Extract visual features
+
                 visual_feat = model.extract_features(
                     img1, use_query_encoder=True, feature_type='visual'
                 )
 
-                # Extract topo features
+
                 topo_feat = model.extract_features(
                     img1, use_query_encoder=True, feature_type='topo'
                 )
 
-                # Extract combined features
+
                 combined_feat = model.extract_features(
                     img1, use_query_encoder=True, feature_type='both'
                 )
@@ -545,7 +545,7 @@ def extract_and_save_features(model, data_loaders, device, config, logger):
                 if (batch_idx + 1) % 10 == 0:
                     logger.log(f"  Processed {batch_idx + 1}/{len(loader)} batches")
 
-            # Concatenate features
+
             if len(visual_features) > 0:
                 visual_feat_array = np.concatenate(visual_features, axis=0)
                 topo_feat_array = np.concatenate(topo_features, axis=0)
@@ -559,7 +559,7 @@ def extract_and_save_features(model, data_loaders, device, config, logger):
                 logger.log(f"  Topo features shape: {topo_feat_array.shape}")
                 logger.log(f"  Combined features shape: {combined_feat_array.shape}")
 
-    # Save features
+
     features_path = os.path.join(config['checkpoint_dir'], 'extracted_features.npz')
     np.savez(features_path, **features_dict)
     logger.log(f"\nFeatures saved to {features_path}\n")
@@ -567,11 +567,11 @@ def extract_and_save_features(model, data_loaders, device, config, logger):
     return features_dict
 
 
-# ============================================================
-# 绘制训练曲线
-# ============================================================
+
+
+
 def plot_training_curves(config, logger):
-    """Plot training and validation loss curves"""
+
     try:
         import matplotlib.pyplot as plt
         import matplotlib
@@ -591,7 +591,7 @@ def plot_training_curves(config, logger):
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     epochs = list(range(1, len(history['train_total_loss']) + 1))
 
-    # Total loss
+
     axes[0, 0].plot(epochs, history['train_total_loss'], 'b-', label='Train', linewidth=2)
     axes[0, 0].plot(epochs, history['val_total_loss'], 'r-', label='Validation', linewidth=2)
     axes[0, 0].set_xlabel('Epoch')
@@ -600,7 +600,7 @@ def plot_training_curves(config, logger):
     axes[0, 0].legend()
     axes[0, 0].grid(True, alpha=0.3)
 
-    # Visual loss
+
     axes[0, 1].plot(epochs, history['train_visual_loss'], 'b-', label='Train', linewidth=2)
     axes[0, 1].plot(epochs, history['val_visual_loss'], 'r-', label='Validation', linewidth=2)
     axes[0, 1].set_xlabel('Epoch')
@@ -609,7 +609,7 @@ def plot_training_curves(config, logger):
     axes[0, 1].legend()
     axes[0, 1].grid(True, alpha=0.3)
 
-    # Topology loss
+
     axes[1, 0].plot(epochs, history['train_topo_loss'], 'b-', label='Train', linewidth=2)
     axes[1, 0].plot(epochs, history['val_topo_loss'], 'r-', label='Validation', linewidth=2)
     axes[1, 0].set_xlabel('Epoch')
@@ -618,7 +618,7 @@ def plot_training_curves(config, logger):
     axes[1, 0].legend()
     axes[1, 0].grid(True, alpha=0.3)
 
-    # Learning rate
+
     axes[1, 1].plot(epochs, history['learning_rates'], 'g-', linewidth=2)
     axes[1, 1].set_xlabel('Epoch')
     axes[1, 1].set_ylabel('Learning Rate')
@@ -633,51 +633,51 @@ def plot_training_curves(config, logger):
     plt.close()
 
 
-# ============================================================
-# 命令行参数解析
-# ============================================================
+
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Train Multi-Branch Topology Network')
 
-    # 数据路径
+
     parser.add_argument('--train_csv', type=str, default='./csv/train.csv')
     parser.add_argument('--val_csv', type=str, default='./csv/val.csv')
     parser.add_argument('--test_csv', type=str, default='./csv/test.csv')
 
-    # 训练参数
+
     parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--learning_rate', type=float, default=1e-4)
     parser.add_argument('--num_epochs', type=int, default=200)
     parser.add_argument('--patience', type=int, default=15)
 
-    # 支路配置
+
     parser.add_argument('--no_legacy', action='store_true', help='Disable legacy erosion branch')
     parser.add_argument('--no_skeleton', action='store_true', help='Disable skeleton branch')
     parser.add_argument('--no_edge', action='store_true', help='Disable edge branch')
     parser.add_argument('--no_frequency', action='store_true', help='Disable frequency branch')
 
-    # 模型参数
+
     parser.add_argument('--topo_weight', type=float, default=0.35)
     parser.add_argument('--topo_dim', type=int, default=128)
     parser.add_argument('--feature_dim', type=int, default=256)
 
-    # 其他
+
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoints/hybrid_v2_12/')
     parser.add_argument('--experiment_name', type=str, default='')
 
     return parser.parse_args()
 
 
-# ============================================================
-# 主函数
-# ============================================================
-def main():
-    """Main training function"""
 
-    # 解析命令行参数
+
+
+def main():
+
+
+
     args = parse_args()
 
-    # 获取默认配置并更新
+
     config = get_default_config()
     config['train_csv'] = args.train_csv
     config['val_csv'] = args.val_csv
@@ -686,7 +686,7 @@ def main():
     config['learning_rate'] = args.learning_rate
     config['num_epochs'] = args.num_epochs
     config['patience'] = args.patience
-    # 只有在命令行明确指定时才覆盖默认配置
+
     if args.no_legacy:
         config['use_legacy_branch'] = False
     if args.no_skeleton:
@@ -699,28 +699,28 @@ def main():
     config['topo_dim'] = args.topo_dim
     config['feature_dim'] = args.feature_dim
 
-    # 设置checkpoint目录（只有在命令行指定时才覆盖）
+
     if args.experiment_name:
         config['checkpoint_dir'] = f"checkpoints/{args.experiment_name}/"
     elif args.checkpoint_dir != 'checkpoints/multi_topo/':
-        # 只有当用户明确指定了不同的checkpoint_dir时才覆盖
+
         config['checkpoint_dir'] = args.checkpoint_dir
 
-    # 创建目录
+
     Path(config['checkpoint_dir']).mkdir(parents=True, exist_ok=True)
     log_file = os.path.join(config['checkpoint_dir'], 'training_log.txt')
 
-    # 初始化logger
+
     logger = Logger(log_file)
 
-    # 图像预处理
+
     image_preprocess = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     ])
 
-    # 初始化日志文件
+
     with open(log_file, 'w', encoding='utf-8') as f:
         f.write(f"Training started at {datetime.now()}\n")
         f.write("=" * 70 + "\n\n")
@@ -729,7 +729,7 @@ def main():
     logger.log("MULTI-BRANCH TOPOLOGY NETWORK TRAINING")
     logger.log("=" * 70 + "\n")
 
-    # Set device
+
     device = torch.device("cuda" if config['use_gpu'] else "cpu")
     if config['use_gpu']:
         logger.log(f"GPU: {torch.cuda.get_device_name(0)}")
@@ -738,24 +738,24 @@ def main():
     else:
         logger.log("Using CPU (this may be slow)\n")
 
-    # Save config
+
     config_path = os.path.join(config['checkpoint_dir'], 'config.json')
     with open(config_path, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2)
     logger.log(f"Configuration saved to {config_path}")
     logger.log(f"   Checkpoint dir: {config['checkpoint_dir']}\n")
 
-    # Load data
+
     data_loaders = get_data_loaders(config, image_preprocess, logger)
 
-    # Create model
+
     model = create_model(config, device, logger)
     model = model.to(device)
 
-    # Create optimizer and scheduler
+
     optimizer, scheduler = create_optimizer_and_scheduler(model, config, logger)
 
-    # Training configuration summary
+
     logger.log("=" * 70)
     logger.log("TRAINING CONFIGURATION SUMMARY")
     logger.log("=" * 70)
@@ -776,7 +776,7 @@ def main():
     logger.log("=" * 70 + "\n")
 
     try:
-        # Start training
+
         start_time = datetime.now()
         logger.log(f"Training started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
@@ -803,7 +803,7 @@ def main():
         logger.log(f"\nTraceback:\n{traceback.format_exc()}")
         return
 
-    # Load best model
+
     logger.log("=" * 70)
     logger.log("LOADING BEST MODEL FOR EVALUATION")
     logger.log("=" * 70 + "\n")
@@ -820,21 +820,21 @@ def main():
         logger.log(f"Best model path not found: {best_model_path}")
         logger.log("   Using current model state\n")
 
-    # Test on test set
+
     logger.log("\n")
     test_visual_loss, test_topo_loss, test_total_loss = test_model(
         model, data_loaders['test'], device, logger
     )
 
-    # Extract features
+
     logger.log("\n")
     features_dict = extract_and_save_features(model, data_loaders, device, config, logger)
 
-    # Plot training curves
+
     logger.log("\n")
     plot_training_curves(config, logger)
 
-    # Final report
+
     logger.log("=" * 70)
     logger.log("FINAL TRAINING REPORT")
     logger.log("=" * 70 + "\n")
@@ -878,9 +878,9 @@ def main():
     logger.log("=" * 70 + "\n")
 
 
-# ============================================================
-# Entry point
-# ============================================================
+
+
+
 if __name__ == '__main__':
     try:
         main()

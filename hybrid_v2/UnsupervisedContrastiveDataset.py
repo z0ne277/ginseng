@@ -1,11 +1,11 @@
-"""
-改进的无监督对比学习数据集
+\
+\
+\
+\
+\
+\
+\
 
-改进点：
-1. 保留原有的增强操作
-2. 优化形态学操作的频率
-3. 添加拓扑保持的增强策略
-"""
 
 import pandas as pd
 from torch.utils.data import Dataset
@@ -16,14 +16,14 @@ import cv2
 
 
 class UnsupervisedContrastiveDataset(Dataset):
-    """
-    改进的无监督对比学习数据集
+\
+\
+\
+\
+\
+\
+\
 
-    设计原则：
-    1. 增强应该保持拓扑结构不变
-    2. 形态学操作应该增强拓扑特征的学习
-    3. 避免过度增强导致拓扑信息丢失
-    """
 
     def __init__(
             self,
@@ -32,17 +32,17 @@ class UnsupervisedContrastiveDataset(Dataset):
             use_augment=False,
             use_binarization=False,
             binarization_threshold=128,
-            augment_strength='medium'  # 'light', 'medium', 'strong'
+            augment_strength='medium'
     ):
-        """
-        Args:
-            csv_file: CSV文件路径
-            transform: 图像变换pipeline
-            use_augment: 是否使用数据增强
-            use_binarization: 是否进行二值化预处理
-            binarization_threshold: 二值化阈值 (0-255)
-            augment_strength: 增强强度
-        """
+\
+\
+\
+\
+\
+\
+\
+\
+
         self.data = pd.read_csv(csv_file)
         self.transform = transform
         self.use_augment = use_augment
@@ -50,11 +50,11 @@ class UnsupervisedContrastiveDataset(Dataset):
         self.binarization_threshold = binarization_threshold
         self.augment_strength = augment_strength
 
-        # 根据增强强度设置参数
+
         self._set_augment_params()
 
     def _set_augment_params(self):
-        """根据增强强度设置参数"""
+
         if self.augment_strength == 'light':
             self.flip_prob = 0.3
             self.rotate_prob = 0.3
@@ -69,7 +69,7 @@ class UnsupervisedContrastiveDataset(Dataset):
             self.noise_prob = 0.2
             self.morph_prob = 0.6
             self.max_rotation = 30
-        else:  # strong
+        else:
             self.flip_prob = 0.6
             self.rotate_prob = 0.6
             self.perspective_prob = 0.5
@@ -81,7 +81,7 @@ class UnsupervisedContrastiveDataset(Dataset):
         return len(self.data)
 
     def _binarize(self, image):
-        """自适应二值化"""
+
         img_np = np.array(image)
         if len(img_np.shape) == 3:
             img_np = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
@@ -97,20 +97,20 @@ class UnsupervisedContrastiveDataset(Dataset):
         return Image.fromarray(binary)
 
     def augment_image(self, image):
-        """
-        拓扑保持的数据增强策略
-        """
-        # 确保是灰度图
+\
+\
+
+
         if image.mode != 'L':
             image = image.convert('L')
 
         width, height = image.size
 
-        # ---------- 0. 可选的预处理二值化 ----------
+
         if self.use_binarization and random.random() > 0.7:
             image = self._binarize(image)
 
-        # ---------- 1. 基础几何变换（保持拓扑） ----------
+
         if random.random() < self.flip_prob:
             image = image.transpose(Image.FLIP_LEFT_RIGHT)
         if random.random() < self.flip_prob:
@@ -119,7 +119,7 @@ class UnsupervisedContrastiveDataset(Dataset):
             angle = random.randint(-self.max_rotation, self.max_rotation)
             image = image.rotate(angle, resample=Image.BICUBIC, expand=False, fillcolor=0)
 
-        # ---------- 2. 透视变换（保留拓扑结构） ----------
+
         if random.random() < self.perspective_prob:
             img_np = np.array(image)
             distortion_scale = random.uniform(0.05, 0.15)
@@ -152,7 +152,7 @@ class UnsupervisedContrastiveDataset(Dataset):
             )
             image = Image.fromarray(img_np)
 
-        # ---------- 3. 轻微高斯噪声 ----------
+
         if random.random() < self.noise_prob:
             img_np = np.array(image).astype(np.float32)
             noise = np.random.normal(0, random.uniform(5, 15), img_np.shape)
@@ -160,12 +160,12 @@ class UnsupervisedContrastiveDataset(Dataset):
             img_np = np.clip(img_np, 0, 255).astype(np.uint8)
             image = Image.fromarray(img_np)
 
-        # ---------- 4. 轻微模糊 ----------
+
         if random.random() < 0.3:
             radius = random.uniform(0.3, 1.0)
             image = image.filter(ImageFilter.GaussianBlur(radius=radius))
 
-        # ---------- 5. 缩放（保持拓扑） ----------
+
         if random.random() < 0.4:
             scale_factor = random.uniform(0.9, 1.1)
             new_size = (int(width * scale_factor), int(height * scale_factor))
@@ -184,7 +184,7 @@ class UnsupervisedContrastiveDataset(Dataset):
                 new_image.paste(image, (paste_left, paste_top))
                 image = new_image
 
-        # ---------- 6. 小区域随机擦除（不影响整体拓扑） ----------
+
         if random.random() < 0.2:
             img_np = np.array(image)
             h, w = img_np.shape[:2]
@@ -196,7 +196,7 @@ class UnsupervisedContrastiveDataset(Dataset):
                 img_np[y:y + erase_size_h, x:x + erase_size_w] = 0
             image = Image.fromarray(img_np)
 
-        # ---------- 7. 形态学操作（核心：拓扑特征增强） ----------
+
         if random.random() < self.morph_prob:
             img_np = np.array(image)
             kernel_size = random.choice([3, 5])
@@ -212,16 +212,16 @@ class UnsupervisedContrastiveDataset(Dataset):
             elif op == 'dilate':
                 img_np = cv2.dilate(img_np, kernel, iterations=1)
             elif op == 'gradient':
-                # 形态学梯度突出边缘
+
                 img_np = cv2.morphologyEx(img_np, cv2.MORPH_GRADIENT, kernel)
 
             image = Image.fromarray(img_np)
 
-        # ---------- 8. 对比度调整 ----------
+
         if random.random() < 0.3:
             image = ImageOps.autocontrast(image)
 
-        # ---------- 9. 亮度微调 ----------
+
         if random.random() < 0.2:
             img_np = np.array(image).astype(np.float32)
             brightness_factor = random.uniform(0.9, 1.1)
@@ -229,7 +229,7 @@ class UnsupervisedContrastiveDataset(Dataset):
             img_np = np.clip(img_np, 0, 255).astype(np.uint8)
             image = Image.fromarray(img_np)
 
-        # 保证输出是三通道
+
         image = image.convert("L").convert("RGB")
         return image
 
@@ -238,7 +238,7 @@ class UnsupervisedContrastiveDataset(Dataset):
         image = Image.open(img_path).convert("L")
 
         if self.use_augment:
-            # 生成两个增强视图
+
             img1 = self.augment_image(image.copy())
             img2 = self.augment_image(image.copy())
         else:
@@ -253,9 +253,9 @@ class UnsupervisedContrastiveDataset(Dataset):
 
 
 class SupervisedContrastiveDataset(Dataset):
-    """
-    有监督对比学习数据集（如果有标签）
-    """
+\
+\
+
 
     def __init__(
             self,
@@ -269,7 +269,7 @@ class SupervisedContrastiveDataset(Dataset):
         self.use_augment = use_augment
         self.label_column = label_column
 
-        # 如果有标签列
+
         if label_column in self.data.columns:
             self.labels = self.data[label_column].values
             self.has_labels = True
@@ -281,20 +281,20 @@ class SupervisedContrastiveDataset(Dataset):
         return len(self.data)
 
     def augment_image(self, image):
-        """简化的增强"""
+
         if image.mode != 'L':
             image = image.convert('L')
 
         width, height = image.size
 
-        # 基础变换
+
         if random.random() > 0.5:
             image = image.transpose(Image.FLIP_LEFT_RIGHT)
         if random.random() > 0.5:
             angle = random.randint(-20, 20)
             image = image.rotate(angle, resample=Image.BICUBIC, fillcolor=0)
 
-        # 形态学操作
+
         if random.random() > 0.4:
             img_np = np.array(image)
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))

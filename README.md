@@ -4,18 +4,34 @@ This repository contains the core implementation used for ginseng instance retri
 
 The main model is a contrastive-learning retrieval framework with a visual branch and morphology/topology-aware branches. The repository also keeps earlier hybrid-topology variants for ablation and comparison.
 
+## Pipeline Overview
+
+![Ginseng retrieval framework](assets/arch_diagram.png)
+
+The full workflow starts from ginseng foreground extraction, then trains and evaluates a retrieval model that combines visual appearance with morphology-aware representations. During inference, `single_topo` supports test-time augmentation over three input forms and fuses their features before retrieval.
+
+## Example Visualization
+
+![Same ginseng example](assets/examples/same_ginseng_group_188.png)
+
+The example above shows different views from the same ginseng root group. The dataset and trained weights are not released in this repository; the image is included only as a small qualitative example for the repository page.
+
 ## Repository Layout
 
 ```text
 .
-├── single_topo/      # Main method: single multi-level morphology branch + inference-time TTA fusion
-├── hybrid_v2/        # Earlier hybrid topology model used for ablation
-├── hybrid_v3/        # Hybrid topology model with branch controls and extra analysis scripts
-├── requirements.txt
-└── README.md
+|-- ginseng_extractor/
+|-- single_topo/
+|-- hybrid_v2/
+|-- hybrid_v3/
+|-- assets/
+|-- requirements.txt
+`-- README.md
 ```
 
-`single_topo` is the recommended entry point for the final paper method. It supports three inference-time input modes:
+`ginseng_extractor` contains the foreground extraction pipeline used before retrieval. `single_topo` is the recommended entry point for the final paper method. `hybrid_v2` and `hybrid_v3` keep earlier topology variants for ablation and comparison.
+
+`single_topo` supports three inference-time input modes:
 
 - `stretch224`: direct square resize to 224 x 224.
 - `contain224`: aspect-preserving resize into a 224 x 224 canvas.
@@ -34,6 +50,49 @@ The repository intentionally excludes private or large local artifacts:
 - batch retrieval outputs and visualization results.
 
 Use the provided `configs/default.example.json` files as templates and point them to your own dataset, query groups, and trained weights.
+
+## Ginseng Foreground Extraction
+
+The extraction code is in `ginseng_extractor/`. It uses GroundingDINO to locate the ginseng region and SAM or SAM-HQ to obtain masks and foreground cutouts. The released code keeps folder structure during batch processing and includes post-processing utilities for grayscale/binary conversion and cleaning extracted folders.
+
+Expected external model files:
+
+- `ginseng_extractor/model/groundingdino_swint_ogc.pth`
+- `ginseng_extractor/model/sam_vit_h_4b8939.pth`
+- `ginseng_extractor/model/sam_hq_vit_h.pth`
+
+These files are intentionally ignored by Git because they are large external checkpoints. Download them from the official GroundingDINO and Segment Anything releases, then place them under `ginseng_extractor/model/`.
+
+Run extraction:
+
+```bash
+python ginseng_extractor/ginseng_extractor.py \
+  --input-root data/raw \
+  --output-root outputs/extraction/cutout \
+  --processed-root outputs/extraction/processed \
+  --recursive \
+  --batch-size 64
+```
+
+Generate grayscale and binary images from extracted foregrounds:
+
+```bash
+python ginseng_extractor/convert_image.py \
+  --input-root outputs/extraction/processed \
+  --output-gray outputs/extraction/gray \
+  --output-binary outputs/extraction/binary \
+  --binary-mode auto \
+  --recursive
+```
+
+Clean intermediate extraction files against a grouped same-ginseng folder:
+
+```bash
+python ginseng_extractor/clean_extraction.py \
+  --extraction-root outputs/extraction/processed \
+  --same-root data/grouped \
+  --dry-run
+```
 
 ## Data Format
 

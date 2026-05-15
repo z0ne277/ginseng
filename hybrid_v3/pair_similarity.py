@@ -1,12 +1,12 @@
-"""
-Compute similarity between two images with a trained hybrid_v3 model.
+\
+\
+\
+\
+\
+\
+\
+\
 
-Supported modes:
-1. preprocess_pipeline=none
-   Compare two already-prepared images directly.
-2. preprocess_pipeline=extract_binary
-   Raw image -> ginseng extraction -> binarization -> feature extraction -> similarity.
-"""
 
 from __future__ import annotations
 
