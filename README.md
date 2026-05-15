@@ -12,9 +12,9 @@ The full workflow starts from ginseng foreground extraction, then trains and eva
 
 ## Example Visualization
 
-![Same ginseng example](assets/examples/same_ginseng_group_188.png)
+![SSI high-low ginseng groups](assets/examples/ssi_high_low_four_groups.png)
 
-The example above shows different views from the same ginseng root group. The dataset and trained weights are not released in this repository; the image is included only as a small qualitative example for the repository page.
+The example above shows two low-SSI groups and two high-SSI groups from the same-ginseng dataset. Low-SSI groups exhibit stronger within-instance structural variation, while high-SSI groups keep more consistent root layouts across views. The dataset and trained weights are not released in this repository; the image is included only as a small qualitative example for the repository page.
 
 ## Repository Layout
 
