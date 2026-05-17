@@ -16,6 +16,22 @@ The full workflow starts from ginseng foreground extraction, then trains and eva
 
 The example above shows two low-SSI groups and two high-SSI groups from the same-ginseng dataset. Low-SSI groups exhibit stronger within-instance structural variation, while high-SSI groups keep more consistent root layouts across views. The dataset and trained weights are not released in this repository; the image is included only as a small qualitative example for the repository page.
 
+## Retrieval Results
+
+![Retrieval comparison cases](assets/examples/method_comparison_cases.png)
+
+The qualitative cases compare MoCoV3, MoCoV3+CBAM, and the proposed topology-aware method under the same query-gallery protocol. Green boxes mark correct same-ginseng retrievals. The proposed method moves more positive samples into earlier ranks, especially when background, orientation, or local root layout changes across views.
+
+| Method | MRR | mAP | R@1 | R@5 | R@10 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| SimCLR | 0.8236 | 0.5775 | 0.2540 | 0.6193 | 0.7143 |
+| MoCoV3 | 0.8774 | 0.6623 | 0.2772 | 0.6936 | 0.7797 |
+| MoCoV3+CBAM | 0.8907 | 0.7060 | 0.2822 | 0.7332 | 0.8228 |
+| Proposed method | 0.9454 | 0.8096 | 0.3060 | 0.8210 | 0.8747 |
+| Proposed method + ITA | **0.9569** | **0.8500** | **0.3110** | **0.8552** | **0.9020** |
+
+Compared with MoCoV3+CBAM, the proposed method improves mAP by 0.1036 and R@5 by 0.0878. With inference-time augmentation, the gains increase to 0.1440 mAP and 0.1220 R@5.
+
 ## Repository Layout
 
 ```text
