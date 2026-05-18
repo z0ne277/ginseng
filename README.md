@@ -1,4 +1,4 @@
-# Ginseng Re-identification
+# Multi-level Topology-aware Contrastive Learning for Ginseng Re-identification
 
 This repository contains the core implementation used for ginseng instance retrieval and re-identification experiments. The code focuses on non-rigid ginseng roots, where the same root can appear with different orientations, branch layouts, partial occlusion, and imaging conditions.
 
