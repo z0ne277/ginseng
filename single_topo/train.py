@@ -1,10 +1,13 @@
 import argparse
+from functools import partial
 import json
+import random
 import time
 from datetime import datetime
 from pathlib import Path
 
 import torch
+import numpy as np
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
 from torch.utils.data import DataLoader
@@ -64,7 +67,17 @@ def build_preprocess(cfg):
     )
 
 
+def seed_data_worker(worker_id, *, base_seed):
+    worker_seed = int(base_seed) + int(worker_id)
+    random.seed(worker_seed)
+    np.random.seed(worker_seed)
+
+
 def build_dataloader(csv_path, transform, batch_size, shuffle, use_augment, cfg):
+    seed = int(cfg.get("seed", 42)) + (1 if shuffle else 2)
+    generator = torch.Generator()
+    generator.manual_seed(seed)
+
     dataset = UnsupervisedContrastiveDataset(
         csv_file=csv_path,
         transform=transform,
@@ -79,6 +92,8 @@ def build_dataloader(csv_path, transform, batch_size, shuffle, use_augment, cfg)
         num_workers=cfg["num_workers"],
         drop_last=shuffle,
         pin_memory=cfg["pin_memory"],
+        worker_init_fn=partial(seed_data_worker, base_seed=seed),
+        generator=generator,
     )
 
 
@@ -99,6 +114,12 @@ def create_model(cfg, device):
         T=cfg["T"],
         topo_weight=cfg["topo_weight"],
         num_erosion_levels=cfg["num_erosion_levels"],
+        erosion_kernel_size=cfg.get("erosion_kernel_size", 3),
+        topology_operator=cfg.get("topology_operator", "min"),
+        topology_negative_source=cfg.get("topology_negative_source", "queue"),
+        use_cbam=cfg.get("use_cbam", True),
+        backbone_name=cfg.get("backbone_name", "resnet50"),
+        pretrained_backbone=cfg.get("pretrained_backbone", True),
         device=device,
     ).to(device)
 
@@ -311,6 +332,14 @@ def train_model(model, data_loaders, device, optimizer, scheduler, cfg, logger):
 def main():
     global config, image_preprocess, log_file
     config = load_runtime_config()
+    seed = int(config.get("seed", 42))
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
     image_preprocess = build_preprocess(config)
 
     checkpoint_dir = Path(config["checkpoint_dir"])
@@ -322,6 +351,7 @@ def main():
     use_gpu = bool(config.get("use_gpu", True)) and torch.cuda.is_available()
     device = torch.device("cuda" if use_gpu else "cpu")
     logger.log(f"device={device}")
+    logger.log(f"seed={seed}")
     logger.log(f"checkpoint_dir={checkpoint_dir}")
 
     (checkpoint_dir / "config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "protocol_tag": "271_1075_unlabeled",
+  "models": [
+    {
+      "id": "simsiam_r50",
+      "algorithm": "simsiam",
+      "backbone": "resnet50",
+      "conda_env": "gsam",
+      "feature_dim": 2048,
+      "requires_identity_labels": false,
+      "batch_size": 64,
+      "epochs": 100,
+      "learning_rate": 0.0005
+    },
+    {
+      "id": "vicreg_r50",
+      "algorithm": "vicreg",
+      "backbone": "resnet50",
+      "conda_env": "gsam",
+      "feature_dim": 2048,
+      "requires_identity_labels": false,
+      "batch_size": 64,
+      "epochs": 100,
+      "learning_rate": 0.0005
+    },
+    {
+      "id": "dino_vits16",
+      "algorithm": "dino",
+      "backbone": "vit_small_patch16_224",
+      "conda_env": "ginseng-baselines",
+      "feature_dim": 384,
+      "requires_identity_labels": false,
+      "batch_size": 32,
+      "epochs": 100,
+      "learning_rate": 0.00025
+    }
+  ]
+}

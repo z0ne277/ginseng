@@ -53,7 +53,7 @@ def _normalize_raw_tta_modes(raw_modes: Any, default_size: int) -> List[str]:
 
     text = raw_modes.strip()
 
-
+    # Repeatedly peel off wrapping quotes so cmd / powershell / json-string inputs all work.
     while len(text) >= 2 and text[0] == text[-1] and text[0] in {"'", "\""}:
         text = text[1:-1].strip()
 

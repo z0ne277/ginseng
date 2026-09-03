@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "protocol_tag": "271_1075",
+  "models": [
+    {
+      "id": "transreid_external_checkpoint",
+      "display_name": "TransReID (explicit checkpoint)"
+    }
+  ]
+}

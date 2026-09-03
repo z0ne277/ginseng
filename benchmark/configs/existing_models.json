@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "protocol_tag": "271_1075",
+  "conda_env": "gsam",
+  "models": [
+    {
+      "id": "simclr",
+      "display_name": "SimCLR v2",
+      "workdir": "simclr",
+      "checkpoint": "simclr/model_epoch_200(1).pth",
+      "model_source": "local-simclr-v2-resnet50",
+      "feature_dim": 256,
+      "extractor": {
+        "mode": "argparse",
+        "script": "extraction.py",
+        "arguments": ["--batch-size", "64", "--num-workers", "4", "--image-size", "224"]
+      },
+      "preprocessing": {
+        "resize": "stretch224",
+        "mean": [0.485, 0.456, 0.406],
+        "std": [0.229, 0.224, 0.225]
+      },
+      "tta": {"enabled": false, "modes": ["stretch224"], "weights": [1.0]}
+    },
+    {
+      "id": "moco_v3",
+      "display_name": "MoCo v3",
+      "workdir": "moco",
+      "checkpoint": "moco/model_epoch_200.pth",
+      "model_source": "local-moco-v3-resnet50",
+      "feature_dim": 256,
+      "extractor": {
+        "mode": "argparse",
+        "script": "extraction.py",
+        "arguments": ["--batch-size", "64", "--num-workers", "4", "--image-size", "224"]
+      },
+      "preprocessing": {
+        "resize": "stretch224",
+        "mean": [0.485, 0.456, 0.406],
+        "std": [0.229, 0.224, 0.225]
+      },
+      "tta": {"enabled": false, "modes": ["stretch224"], "weights": [1.0]}
+    },
+    {
+      "id": "moco_v3_cbam",
+      "display_name": "MoCo v3 + CBAM",
+      "workdir": "moco_cbam",
+      "checkpoint": "moco_cbam/checkpoints/moco_cbam/best_model.pth",
+      "model_source": "local-moco-v3-resnet50-cbam",
+      "feature_dim": 512,
+      "extractor": {
+        "mode": "override",
+        "script": "extraction.py",
+        "arguments": []
+      },
+      "preprocessing": {
+        "resize": "stretch224",
+        "mean": [0.5, 0.5, 0.5],
+        "std": [0.5, 0.5, 0.5]
+      },
+      "tta": {"enabled": false, "modes": ["stretch224"], "weights": [1.0]}
+    },
+    {
+      "id": "single_topo_plain",
+      "display_name": "Single-Topo (no TTA)",
+      "workdir": "single_topo",
+      "checkpoint": "single_topo/checkpoints/moco_v3_topo/best_model.pth",
+      "model_source": "local-moco-v3-resnet50-topology",
+      "feature_dim": 384,
+      "extractor": {
+        "mode": "override",
+        "script": "extraction.py",
+        "arguments": [
+          "tta_enabled=false",
+          "tta_modes=[\"stretch224\"]",
+          "tta_weights=[1.0]"
+        ]
+      },
+      "preprocessing": {
+        "resize": "stretch224",
+        "mean": [0.5, 0.5, 0.5],
+        "std": [0.5, 0.5, 0.5]
+      },
+      "tta": {"enabled": false, "modes": ["stretch224"], "weights": [1.0]}
+    },
+    {
+      "id": "single_topo_tta",
+      "display_name": "Single-Topo (paper TTA)",
+      "workdir": "single_topo",
+      "checkpoint": "single_topo/checkpoints/moco_v3_topo/best_model.pth",
+      "model_source": "local-moco-v3-resnet50-topology",
+      "feature_dim": 384,
+      "extractor": {
+        "mode": "override",
+        "script": "extraction.py",
+        "arguments": [
+          "tta_enabled=true",
+          "tta_modes=stretch224,contain224,contain256",
+          "tta_weights=[0.6,0.25,0.15]"
+        ]
+      },
+      "preprocessing": {
+        "resize": ["stretch224", "contain224", "contain256"],
+        "mean": [0.5, 0.5, 0.5],
+        "std": [0.5, 0.5, 0.5]
+      },
+      "tta": {
+        "enabled": true,
+        "modes": ["stretch224", "contain224", "contain256"],
+        "weights": [0.6, 0.25, 0.15]
+      }
+    }
+  ]
+}

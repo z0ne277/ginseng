@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "protocol_tag": "271_1075",
+  "models": [
+    {
+      "id": "dinov2_base",
+      "display_name": "DINOv2 ViT-B/14 (frozen)",
+      "model": "facebook/dinov2-base",
+      "revision": "f9e44c814b77203eaa57a6bdbbd535f21ede1415",
+      "conda_env": "gsam",
+      "gated": false,
+      "local_model_env_key": "DINOV2_WEIGHTS",
+      "default_local_model_dir": "artifacts/models/dinov2_base",
+      "prefetch_script": "scripts/download_dinov2.ps1",
+      "extractor_kind": "pooler_or_cls",
+      "feature_dim": 768,
+      "batch_size": 32,
+      "num_workers": 4,
+      "preprocessing": {
+        "source": "official AutoImageProcessor",
+        "resize": 256,
+        "crop": 224,
+        "model": "facebook/dinov2-base"
+      },
+      "tta": {"enabled": false, "weights": [1.0]}
+    },
+    {
+      "id": "siglip2_base",
+      "display_name": "SigLIP 2 Base/16 224 (frozen)",
+      "model": "google/siglip2-base-patch16-224",
+      "revision": "75de2d55ec2d0b4efc50b3e9ad70dba96a7b2fa2",
+      "conda_env": "ginseng-baselines",
+      "gated": false,
+      "extractor_kind": "model_image_features",
+      "feature_dim": 768,
+      "batch_size": 24,
+      "num_workers": 4,
+      "preprocessing": {
+        "source": "official AutoImageProcessor",
+        "model": "google/siglip2-base-patch16-224",
+        "feature": "AutoModel.get_image_features"
+      },
+      "tta": {"enabled": false, "weights": [1.0]}
+    },
+    {
+      "id": "clip_vit_b16",
+      "display_name": "CLIP ViT-B/16 (frozen)",
+      "model": "openai/clip-vit-base-patch16",
+      "revision": "57c216476eefef5ab752ec549e440a49ae4ae5f3",
+      "conda_env": "ginseng-baselines",
+      "gated": false,
+      "extractor_kind": "model_image_features",
+      "feature_dim": 512,
+      "batch_size": 48,
+      "num_workers": 4,
+      "preprocessing": {
+        "source": "official AutoImageProcessor",
+        "model": "openai/clip-vit-base-patch16",
+        "feature": "AutoModel.get_image_features with visual projection"
+      },
+      "tta": {"enabled": false, "weights": [1.0]}
+    },
+    {
+      "id": "swinv2_base",
+      "display_name": "SwinV2 Base 256 (frozen)",
+      "model": "microsoft/swinv2-base-patch4-window8-256",
+      "revision": "485f4d7059ce28604233e20188df5ee19ab960c6",
+      "conda_env": "ginseng-baselines",
+      "gated": false,
+      "extractor_kind": "pooler_or_cls",
+      "feature_dim": 1024,
+      "batch_size": 32,
+      "num_workers": 4,
+      "preprocessing": {
+        "source": "official AutoImageProcessor",
+        "model": "microsoft/swinv2-base-patch4-window8-256",
+        "feature": "pooler_output"
+      },
+      "tta": {"enabled": false, "weights": [1.0]}
+    },
+    {
+      "id": "convnextv2_base",
+      "display_name": "ConvNeXt V2 Base 22K 224 (frozen)",
+      "model": "facebook/convnextv2-base-22k-224",
+      "revision": "758ff0922dc09136abb55774e7f8b1e1bd0dc344",
+      "conda_env": "ginseng-baselines",
+      "gated": false,
+      "extractor_kind": "pooler_or_cls",
+      "feature_dim": 1024,
+      "batch_size": 48,
+      "num_workers": 4,
+      "preprocessing": {
+        "source": "official AutoImageProcessor",
+        "model": "facebook/convnextv2-base-22k-224",
+        "feature": "pooler_output"
+      },
+      "tta": {"enabled": false, "weights": [1.0]}
+    }
+  ]
+}

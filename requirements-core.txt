@@ -1,0 +1,7 @@
+# Install a compatible PyTorch/torchvision build separately.
+# Core verification: Python 3.9.23, torch 1.13.1, torchvision 0.14.1.
+numpy>=1.23,<2
+pandas>=1.5,<3
+Pillow>=9,<12
+matplotlib>=3.5,<4
+tqdm>=4.64,<5

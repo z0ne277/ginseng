@@ -1,10 +1,13 @@
-\
-\
-\
-\
-\
-\
-\
+"""
+Build query_groups.json for batch_retrieval.py.
+
+Rule:
+- same_root has subfolders (1,2,3...). Each subfolder contains images of the same ginseng.
+- gallery_root is the retrieval library root. Image paths are gallery_root + filename.
+- For each group, pick one image as query_image; others are same_ginsengs.
+"""
+
+# Legacy visualization query builder. For paper metrics use benchmark/scripts/build_query_groups.py.
 
 
 import argparse

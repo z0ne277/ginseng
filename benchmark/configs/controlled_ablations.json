@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "protocol_tag": "271_1075",
+  "conda_env": "gsam",
+  "models": [
+    {
+      "id": "single_topo_visual_plain",
+      "display_name": "同一检查点：仅视觉分支（无 ITA）",
+      "workdir": "single_topo",
+      "checkpoint": "single_topo/checkpoints/moco_v3_topo/best_model.pth",
+      "model_source": "local-moco-v3-resnet50-topology:visual-branch",
+      "feature_dim": 256,
+      "extractor": {
+        "mode": "override",
+        "script": "extraction.py",
+        "arguments": [
+          "feature_type=visual",
+          "tta_enabled=false",
+          "tta_modes=[\"stretch224\"]",
+          "tta_weights=[1.0]"
+        ]
+      },
+      "preprocessing": {
+        "resize": "stretch224",
+        "mean": [0.5, 0.5, 0.5],
+        "std": [0.5, 0.5, 0.5],
+        "controlled_checkpoint": true,
+        "feature_branch": "visual"
+      },
+      "tta": {
+        "enabled": false,
+        "modes": ["stretch224"],
+        "weights": [1.0]
+      }
+    },
+    {
+      "id": "single_topo_topology_plain",
+      "display_name": "同一检查点：仅形态结构分支（无 ITA）",
+      "workdir": "single_topo",
+      "checkpoint": "single_topo/checkpoints/moco_v3_topo/best_model.pth",
+      "model_source": "local-moco-v3-resnet50-topology:topology-branch",
+      "feature_dim": 128,
+      "extractor": {
+        "mode": "override",
+        "script": "extraction.py",
+        "arguments": [
+          "feature_type=topo",
+          "tta_enabled=false",
+          "tta_modes=[\"stretch224\"]",
+          "tta_weights=[1.0]"
+        ]
+      },
+      "preprocessing": {
+        "resize": "stretch224",
+        "mean": [0.5, 0.5, 0.5],
+        "std": [0.5, 0.5, 0.5],
+        "controlled_checkpoint": true,
+        "feature_branch": "topology"
+      },
+      "tta": {
+        "enabled": false,
+        "modes": ["stretch224"],
+        "weights": [1.0]
+      }
+    }
+  ]
+}

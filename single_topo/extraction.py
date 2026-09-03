@@ -109,6 +109,12 @@ def load_model(device):
         T=config["T"],
         topo_weight=config["topo_weight"],
         num_erosion_levels=config["num_erosion_levels"],
+        erosion_kernel_size=config.get("erosion_kernel_size", 3),
+        topology_operator=config.get("topology_operator", "min"),
+        topology_negative_source=config.get("topology_negative_source", "queue"),
+        use_cbam=config.get("use_cbam", True),
+        backbone_name=config.get("backbone_name", "resnet50"),
+        pretrained_backbone=False,
         device=device,
     )
 

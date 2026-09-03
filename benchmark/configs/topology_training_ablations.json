@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "protocol_tag": "271_1075_unlabeled",
+  "design": "one-factor-at-a-time",
+  "variants": [
+    {
+      "id": "reference",
+      "group": "reference",
+      "requires_identity_labels": false,
+      "overrides": {
+        "num_erosion_levels": 4,
+        "erosion_kernel_size": 3,
+        "topology_operator": "min",
+        "topo_dim": 128,
+        "topo_weight": 0.35,
+        "topology_negative_source": "queue",
+        "use_cbam": true,
+        "backbone_name": "resnet50"
+      }
+    },
+    {
+      "id": "levels_2",
+      "group": "erosion_depth",
+      "requires_identity_labels": false,
+      "overrides": {
+        "num_erosion_levels": 3,
+        "erosion_kernel_size": 3,
+        "topology_operator": "min",
+        "topo_dim": 128,
+        "topo_weight": 0.35,
+        "topology_negative_source": "queue",
+        "use_cbam": true,
+        "backbone_name": "resnet50"
+      }
+    },
+    {
+      "id": "levels_4",
+      "group": "erosion_depth",
+      "requires_identity_labels": false,
+      "overrides": {
+        "num_erosion_levels": 5,
+        "erosion_kernel_size": 3,
+        "topology_operator": "min",
+        "topo_dim": 128,
+        "topo_weight": 0.35,
+        "topology_negative_source": "queue",
+        "use_cbam": true,
+        "backbone_name": "resnet50"
+      }
+    },
+    {
+      "id": "operator_identity",
+      "group": "operator",
+      "requires_identity_labels": false,
+      "overrides": {
+        "num_erosion_levels": 4,
+        "erosion_kernel_size": 3,
+        "topology_operator": "identity",
+        "topo_dim": 128,
+        "topo_weight": 0.35,
+        "topology_negative_source": "queue",
+        "use_cbam": true,
+        "backbone_name": "resnet50"
+      }
+    },
+    {
+      "id": "cbam_off",
+      "group": "attention",
+      "requires_identity_labels": false,
+      "overrides": {
+        "num_erosion_levels": 4,
+        "erosion_kernel_size": 3,
+        "topology_operator": "min",
+        "topo_dim": 128,
+        "topo_weight": 0.35,
+        "topology_negative_source": "queue",
+        "use_cbam": false,
+        "backbone_name": "resnet50"
+      }
+    },
+    {
+      "id": "backbone_convnext_tiny",
+      "group": "backbone",
+      "requires_identity_labels": false,
+      "overrides": {
+        "num_erosion_levels": 4,
+        "erosion_kernel_size": 3,
+        "topology_operator": "min",
+        "topo_dim": 128,
+        "topo_weight": 0.35,
+        "topology_negative_source": "queue",
+        "use_cbam": true,
+        "backbone_name": "convnext_tiny"
+      }
+    },
+    {
+      "id": "backbone_swin_v2_t",
+      "group": "backbone",
+      "requires_identity_labels": false,
+      "overrides": {
+        "num_erosion_levels": 4,
+        "erosion_kernel_size": 3,
+        "topology_operator": "min",
+        "topo_dim": 128,
+        "topo_weight": 0.35,
+        "topology_negative_source": "queue",
+        "use_cbam": true,
+        "backbone_name": "swin_v2_t"
+      }
+    },
+    {
+      "id": "backbone_vit_b_16",
+      "group": "backbone",
+      "requires_identity_labels": false,
+      "overrides": {
+        "num_erosion_levels": 4,
+        "erosion_kernel_size": 3,
+        "topology_operator": "min",
+        "topo_dim": 128,
+        "topo_weight": 0.35,
+        "topology_negative_source": "queue",
+        "use_cbam": true,
+        "backbone_name": "vit_b_16"
+      }
+    }
+  ]
+}

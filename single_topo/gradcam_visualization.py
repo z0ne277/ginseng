@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -165,6 +164,32 @@ def crop_rgb01_to_mask(rgb01: np.ndarray, mask: np.ndarray, margin_ratio: float 
     return rgb01[top:bottom, left:right]
 
 
+def crop_rgb01_pair_to_mask(
+    first_rgb01: np.ndarray,
+    second_rgb01: np.ndarray,
+    mask: np.ndarray,
+    margin_ratio: float = 0.04,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Crop two aligned images with one shared foreground bounding box."""
+    if first_rgb01.shape != second_rgb01.shape:
+        raise ValueError(
+            "Paired display images must have identical shapes before cropping: "
+            f"{first_rgb01.shape} != {second_rgb01.shape}"
+        )
+    ys, xs = np.nonzero(mask)
+    if len(xs) == 0 or len(ys) == 0:
+        return first_rgb01, second_rgb01
+    margin = max(4, int(max(first_rgb01.shape[:2]) * margin_ratio))
+    left = max(0, int(xs.min()) - margin)
+    top = max(0, int(ys.min()) - margin)
+    right = min(first_rgb01.shape[1], int(xs.max()) + margin + 1)
+    bottom = min(first_rgb01.shape[0], int(ys.max()) + margin + 1)
+    return (
+        first_rgb01[top:bottom, left:right],
+        second_rgb01[top:bottom, left:right],
+    )
+
+
 def contain_rgb01(
     rgb01: np.ndarray,
     width: int = DISPLAY_CANVAS_WIDTH,
@@ -225,28 +250,29 @@ def standardize_query_display(query_rgb01: np.ndarray, overlay_rgb01: np.ndarray
     mask = build_foreground_mask_rgb01(query_rgb01)
     angle, should_flip = estimate_alignment(mask)
     aligned_query = apply_alignment_to_rgb01(query_rgb01, angle, should_flip)
+    aligned_overlay = apply_alignment_to_rgb01(overlay_rgb01, angle, should_flip)
     aligned_mask = build_foreground_mask_rgb01(aligned_query)
-    aligned_query = crop_rgb01_to_mask(aligned_query, aligned_mask)
+    aligned_query, aligned_overlay = crop_rgb01_pair_to_mask(
+        aligned_query,
+        aligned_overlay,
+        aligned_mask,
+    )
     if aligned_query.shape[0] > aligned_query.shape[1]:
         aligned_query = np.rot90(aligned_query, k=1)
+        aligned_overlay = np.rot90(aligned_overlay, k=1)
         aligned_mask = build_foreground_mask_rgb01(aligned_query)
         column_mass = aligned_mask.sum(axis=0).astype(np.float32)
         if float(column_mass.sum()) > 0:
             center_x = float(np.dot(np.arange(column_mass.size, dtype=np.float32), column_mass) / column_mass.sum())
             if center_x > (aligned_query.shape[1] / 2.0):
                 aligned_query = np.fliplr(aligned_query).copy()
-        aligned_mask = build_foreground_mask_rgb01(aligned_query)
-        aligned_query = crop_rgb01_to_mask(aligned_query, aligned_mask)
-    aligned_overlay = apply_alignment_to_rgb01(overlay_rgb01, angle, should_flip, crop_mask=aligned_mask)
-    if aligned_overlay.shape[0] > aligned_overlay.shape[1]:
-        aligned_overlay = np.rot90(aligned_overlay, k=1)
-        overlay_mask = build_foreground_mask_rgb01(aligned_overlay)
-        column_mass = overlay_mask.sum(axis=0).astype(np.float32)
-        if float(column_mass.sum()) > 0:
-            center_x = float(np.dot(np.arange(column_mass.size, dtype=np.float32), column_mass) / column_mass.sum())
-            if center_x > (aligned_overlay.shape[1] / 2.0):
                 aligned_overlay = np.fliplr(aligned_overlay).copy()
-        aligned_overlay = crop_rgb01_to_mask(aligned_overlay, build_foreground_mask_rgb01(aligned_overlay))
+        aligned_mask = build_foreground_mask_rgb01(aligned_query)
+        aligned_query, aligned_overlay = crop_rgb01_pair_to_mask(
+            aligned_query,
+            aligned_overlay,
+            aligned_mask,
+        )
     return contain_rgb01(aligned_query), contain_rgb01(aligned_overlay)
 
 
@@ -374,6 +400,14 @@ def build_model(cfg: Dict[str, object], device: torch.device) -> ImprovedMoCoV3W
         T=float(cfg.get("T", 0.07)),
         topo_weight=float(cfg.get("topo_weight", 0.35)),
         num_erosion_levels=int(cfg.get("num_erosion_levels", 4)),
+        erosion_kernel_size=int(cfg.get("erosion_kernel_size", 3)),
+        topology_operator=str(cfg.get("topology_operator", "min")),
+        topology_negative_source=str(
+            cfg.get("topology_negative_source", "queue")
+        ),
+        use_cbam=bool(cfg.get("use_cbam", True)),
+        backbone_name=str(cfg.get("backbone_name", "resnet50")),
+        pretrained_backbone=False,
         device=device,
     )
 
@@ -431,19 +465,15 @@ def resolve_existing_image_path(image_path: str) -> str:
             return str(alt)
 
     search_roots = [
-        Path(item)
-        for item in os.environ.get("GINSENG_IMAGE_SEARCH_DIRS", "").split(os.pathsep)
-        if item.strip()
+        Path(__file__).resolve().parents[1] / "data" / "library_binary",
+        Path(__file__).resolve().parents[1] / "data" / "gallery",
     ]
     for root in search_roots:
         candidate = root / path.name
         if candidate.exists():
             return str(candidate)
 
-    raise FileNotFoundError(
-        f"Image path not found: {image_path}. "
-        "Set GINSENG_IMAGE_SEARCH_DIRS to one or more image roots if case files use filenames only."
-    )
+    raise FileNotFoundError(f"Image path not found: {image_path}")
 
 
 def forward_embeddings(
@@ -620,7 +650,7 @@ def build_summary_figure(results: List[Dict[str, object]], output_prefix: Path) 
     if cols == 1:
         axes = np.array(axes).reshape(3, 2)
 
-    row_labels = ["Original query", "Same-group sample", "Grad-CAM"]
+    row_labels = ["(a)", "(b)", "(c)"]
     for row in range(3):
         axes[row, 0].axis("off")
         axes[row, 0].text(
